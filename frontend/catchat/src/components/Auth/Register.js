@@ -1,11 +1,51 @@
-// src/components/Auth/Register.js
-
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const Register = () => {
-  const handleCreateAccount = () => {
-    console.log("Backend will receive this data and create an account")
-  }
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleCreateAccount = async (event) => {
+    event.preventDefault();
+
+    try {
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        setErrorMessage("Passwords do not match");
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log(data.message);
+        setErrorMessage('');
+        navigate('/dashboard');
+      } else {
+        console.error(data.error);
+        setErrorMessage(data.error);
+      }
+    } catch (error) {
+      console.error('Error during registration:', error);
+      setErrorMessage('Error during registration');
+    }
+  };
+
+  const routeLogin = () => {
+    navigate("/login");
+  };
 
   return (
     <div>
@@ -17,6 +57,11 @@ const Register = () => {
                 Create and account
               </h1>
               <form className="space-y-4 md:space-y-6" action="#">
+              {errorMessage && (
+                  <div className="bg-red-500 text-white p-3 mb-4 rounded-md">
+                    {errorMessage}
+                  </div>
+                )}
                 <div>
                   <label
                     htmlFor="email"
@@ -52,7 +97,7 @@ const Register = () => {
                     Confirm password
                   </label>
                   <input
-                    type="confirm-password"
+                    type="password"
                     name="confirm-password"
                     id="confirm-password"
                     placeholder="••••••••"
@@ -75,7 +120,7 @@ const Register = () => {
                       I accept the{" "}
                       <a
                         className="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                        href="#">
+                        href="/terms-and-conditions">
                         Terms and Conditions
                       </a>
                     </label>
@@ -83,17 +128,17 @@ const Register = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 border"
-                  onClick={handleCreateAccount}>
+                  className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 border">
                   Create an account
                 </button>
                 <p className="text-sm font-light text-gray-500 dark:text-gray-400">
                   Already have an account?{" "}
-                  <a
-                    href="#"
-                    className="font-medium text-primary-600 hover:underline dark:text-primary-500">
-                    Login here
-                  </a>
+                  <button
+                    type="submit"
+                    className="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                    onClick={routeLogin}>
+                    Login
+                  </button>
                 </p>
               </form>
             </div>

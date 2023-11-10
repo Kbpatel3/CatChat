@@ -1,12 +1,44 @@
 // src/components/Auth/Login.js
 
 import React from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleCreateAccount = () => {
+  const handleLogin = async (event) => {
+    event.preventDefault(); // Prevent the default form submission behavior
+
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "POST", // Use POST method instead of GET
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log(data.message);
+        setErrorMessage("");
+        navigate("/dashboard");
+      } else {
+        console.error(data.error);
+        setErrorMessage(data.error);
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      setErrorMessage("Error during login. Please try again.");
+    }
+  };
+
+  const routeRegister = () => {
     navigate("/register");
   };
 
@@ -18,7 +50,12 @@ const Login = () => {
             <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
               Sign in to your account
             </h1>
-            <form className="space-y-4 md:space-y-6" action="#">
+            <form className="space-y-4 md:space-y-6" onSubmit={handleLogin}>
+              {errorMessage && (
+                <div className="bg-red-500 text-white p-3 mb-4 rounded-md">
+                  {errorMessage}
+                </div>
+              )}
               <div>
                 <label
                   htmlFor="email"
@@ -54,7 +91,7 @@ const Login = () => {
                       id="remember"
                       aria-describedby="remember"
                       type="checkbox"
-                      class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
+                      className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
                       required=""></input>
                   </div>
                   <div className="ml-3 text-sm">
@@ -71,13 +108,19 @@ const Login = () => {
                   Forgot password?
                 </a>
               </div>
-              <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Don't have an account? </label>
+              <p className="text-sm font-light text-gray-500 dark:text-gray-400">
+                Don't have an account?{" "}
+                <button
+                  type="submit"
+                  className="font-medium text-primary-600 hover:underline dark:text-primary-500"
+                  onClick={routeRegister}>
+                  Register
+                </button>
+              </p>
               <button
                 type="submit"
-                className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 border"
-                onClick={handleCreateAccount}
-                >
-                Create an account
+                className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 border">
+                Login to account
               </button>
             </form>
           </div>
