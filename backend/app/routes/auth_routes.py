@@ -3,6 +3,7 @@ from flask_login import login_user
 from app.models import User
 from app import app, db
 
+
 # Routes for user authentication
 
 @app.route('/login', methods=['POST'])
@@ -12,7 +13,6 @@ def login():
     # Validate data
     if 'email' not in data or 'password' not in data:
         return jsonify({'error': 'Missing email or password'}), 400
-    
 
     # Parse data
     email = data['email']
@@ -28,7 +28,7 @@ def login():
         return jsonify({'success': 'Logged in successfully'}), 200
     else:
         return jsonify({'error': 'Invalid email or password'}), 400
-    
+
 
 @app.route('/register', methods=['POST'])
 def register():
