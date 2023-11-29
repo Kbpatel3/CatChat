@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000');
 
 function MessageBox() {
   const [message, setMessage] = useState('');
@@ -8,6 +11,9 @@ function MessageBox() {
       console.log('Message submitted:', message);
 
       // Send the message to the server via the socket connection // TODO
+      socket.emit('message', { message });
+
+
     }
   };
 
