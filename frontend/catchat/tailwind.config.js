@@ -6,7 +6,11 @@ module.exports = {
       textColor: {
         'wcu-purple': '#592C88',
         'wcu-gold': '#C1A875',
-      }
+      },
+      backgroundColor: {
+        'wcu-purple': '#592C88',
+        'wcu-gold': '#C1A875',
+      },
     },
   },
   plugins: [],

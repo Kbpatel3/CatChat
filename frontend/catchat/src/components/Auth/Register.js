@@ -11,6 +11,7 @@ const Register = () => {
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [terms, setTerms] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleCreateAccount = async (event) => {
@@ -21,6 +22,11 @@ const Register = () => {
       // Check to see if all fields are filled out
       if (!email || !password || !confirmPassword || !userId) {
         setErrorMessage("Please fill out all fields");
+        return;
+      }
+
+      if (!terms) {
+        setErrorMessage("Please accept the terms and conditions");
         return;
       }
 
@@ -39,12 +45,12 @@ const Register = () => {
       socket.emit("register", { email, userId, password });
 
       // Wait for the server to respond with the user's data
-      socket.once("register_response", (data) => {
+      socket.on("register_response", (data) => {
         console.log("Received register response from server")
         if (data.success) {
           console.log(data.message);
           setErrorMessage('');
-          navigate('/dashboard');
+          navigate('/dashboard' , { state: { userId: userId } });
         } else {
           console.error(data.message);
           setErrorMessage(data.message);
@@ -95,7 +101,7 @@ const Register = () => {
                   <label
                     htmlFor="userId"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Your email
+                    Your Username
                   </label>
                   <input
                     type="text"
@@ -145,6 +151,8 @@ const Register = () => {
                       id="terms"
                       aria-describedby="terms"
                       type="checkbox"
+                      value={terms}
+                      onChange={(event) => setTerms(event.target.checked)}
                       className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
                       required=""></input>
                   </div>

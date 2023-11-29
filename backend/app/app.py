@@ -23,48 +23,103 @@ users = {}
 chats = {}
 emails = []
 passwords = {}
-connected_clients = {}
+connected_clients = []
+active_rooms = {}
 offline_messages = {}
 
 
 # Base Routes
-@socketio.on('joinRoom')
-def handle_join_room(user_id):
-    connected_clients[user_id] = request.sid
-    join_room(user_id)
+@socketio.on('connection')
+def handle_connection(user_id):
+    print("Connection established")
+
+    # Create a new room for the user and join it. The room name is passed as the user id
+    if user_id not in connected_clients and user_id != "":
+        join_room(user_id)
+
+        # Add the user to the list of connected clients
+        connected_clients.append(user_id)
+
+    # Print the list of connected clients
+    print(connected_clients)
+
+    # # If the user has any pending messages, send them
+    # if user_id in offline_messages:
+    #     for message in offline_messages[user_id]:
+    #         emit('privateMessage', {'from_user_id': message['from_user_id'], 'message': message['message']},
+    #              room=user_id)
+    #     del offline_messages[user_id]
+
+
+@socketio.on('createRoom')
+def handle_room_creation(data):
+    client = data.get('client')
+    room_id = data.get('roomName')
+    user_id = data.get('userId')
+    print("Creating room")
+
+    # Create a new room for the user and join it. The room name is passed as the user id
+    if room_id not in active_rooms.values():
+        join_room(room_id)
+
+        # Add the user to the list of active rooms for the user
+        if client not in active_rooms:
+            active_rooms[client] = []
+
+        if user_id not in active_rooms:
+            active_rooms[user_id] = []
+
+        requester, receiver = room_id.split(".")
+        variation1 = receiver + "." + requester
+        variation2 = requester + "." + receiver
+
+        if variation1 == variation2 and variation1 not in active_rooms[client]:
+            active_rooms[client].append(room_id)
+
+        elif variation1 not in active_rooms[client] and variation1 not in active_rooms[user_id] and variation2 not in active_rooms[client] and variation2 not in active_rooms[user_id]:
+            active_rooms[client].append(room_id)
+            active_rooms[user_id].append(room_id)
+
+    # Print the list of active rooms for the user
+    print(active_rooms)
 
     # If the user has any pending messages, send them
-    if user_id in offline_messages:
-        for message in offline_messages[user_id]:
+    if room_id in offline_messages:
+        for message in offline_messages[room_id]:
             emit('privateMessage', {'from_user_id': message['from_user_id'], 'message': message['message']},
-                 room=request.sid)
-        del offline_messages[user_id]
+                 room=room_id)
+        del offline_messages[room_id]
 
 
 @socketio.on('privateMessage')
 def handle_private_message(data):
     to_user_id = data['to_user_id']
+    from_user_id = data['from_user_id']
     message = data['message']
-    to_socket_id = connected_clients.get(to_user_id, None)
 
-    if to_socket_id:
-        emit('privateMessage', {'from_user_id': request.sid, 'message': message},
-             room=to_socket_id)
+    if to_user_id in connected_clients:
+        # Emit to room to_user_id
+        emit('privateMessage', {'from_user_id': from_user_id, 'message': message}, room=to_user_id)
     else:
         # Recipient is not connected
         if to_user_id not in offline_messages:
             offline_messages[to_user_id] = []
 
-        offline_messages[to_user_id].append({'from_user_id': request.sid, 'message': message})
+        offline_messages[to_user_id].append({'from_user_id': from_user_id, 'message': message})
 
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    user_id = next(
-        (user_id for user_id, socket_id in connected_clients.items() if socket_id == request.sid),
-        None)
-    if user_id:
-        del connected_clients[user_id]
+@socketio.on('getConnectedClients')
+def handle_get_connected_clients():
+    emit('ConnectedClients', {'clients': connected_clients})
+
+
+# @socketio.on('disconnect')
+# def handle_disconnect():
+#     user_id = next(
+#         (user_id for user_id, socket_id in connected_clients.items() if socket_id == request.sid),
+#         None)
+#     if user_id:
+#         del connected_clients[user_id]
 
 
 # User Authentication Routes
@@ -77,7 +132,9 @@ def authenticate_user(password, user_id):
 
 @socketio.on('login')
 def handle_login(data):
-    user_id = data.get('user_id')
+    print("Data for login", data)
+    print(users)
+    user_id = data.get('userId')
     password = data.get('password')
 
     # Authenticate user
@@ -89,17 +146,17 @@ def handle_login(data):
 
 @socketio.on('register')
 def handle_register(data):
+    print(data)
     print("Handling register request")
     email = data.get('email')
-    user_id = data.get('user_id')
+    user_id = data.get('userId')
     password = data.get('password')
 
     # Check if the user already exists
     if email in emails:
-        print("User already exists")
+        print("Email already registered")
         emit("register_response",
-             {'success': False, 'message': 'User already exists'})  # TODO Too much info?
-
+             {'success': False, 'message': 'An account already exists for this email'})  # TODO Too much info?
     elif user_id in users:
         print("User already exists")
         emit("register_response",
@@ -107,7 +164,7 @@ def handle_register(data):
     else:
         # Create a new user
         emails.append(email)
-        passwords[email] = password
+        passwords[user_id] = password
         users[user_id] = {'email': email, 'password': password}
         emit("register_response", {'success': True, 'message': 'Account created successfully'})
 

@@ -14,6 +14,7 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogin = async (event) => {
+    console.log("Login button clicked");
     event.preventDefault(); // Prevent the default form submission behavior
 
     try {
@@ -30,7 +31,7 @@ const Login = () => {
         if (data.success) {
           console.log(data.message);
           setErrorMessage("");
-          navigate("/dashboard");
+          navigate("/dashboard", { state: { userId: userId } });
         } else {
           console.log(data.message);
           setErrorMessage(data.message);
@@ -67,9 +68,9 @@ const Login = () => {
                   Your Username
                 </label>
                 <input
-                  type="email"
-                  name="email"
-                  id="email"
+                  type="text"
+                  name="userId"
+                  id="userId"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="name@company.com"
                   value={userId}
