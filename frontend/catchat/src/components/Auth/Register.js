@@ -1,6 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import io from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 const Register = () => {
   const navigate = useNavigate();
@@ -10,33 +13,42 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleCreateAccount = async (event) => {
+    console.log("Handling create account...");
     event.preventDefault();
 
     try {
+      // Check to see if all fields are filled out
+      if (!email || !password || !confirmPassword) {
+        setErrorMessage("Please fill out all fields");
+        return;
+      }
+
+      // Check if email is valid
+      if (!email.includes("@")) {
+        setErrorMessage("Please enter a valid email");
+        return;
+      }
+
       // Check if passwords match
       if (password !== confirmPassword) {
         setErrorMessage("Passwords do not match");
         return;
       }
 
-      const response = await fetch('http://localhost:5000/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      socket.emit("register", { email, password });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log(data.message);
-        setErrorMessage('');
-        navigate('/dashboard');
-      } else {
-        console.error(data.error);
-        setErrorMessage(data.error);
-      }
+      // Wait for the server to respond with the user's data
+      socket.once("register_response", (data) => {
+        console.log("Received register response from server")
+        if (data.success) {
+          console.log(data.message);
+          setErrorMessage('');
+          navigate('/dashboard');
+        } else {
+          console.error(data.message);
+          setErrorMessage(data.message);
+        }
+        });
     } catch (error) {
       console.error('Error during registration:', error);
       setErrorMessage('Error during registration');
@@ -74,6 +86,8 @@ const Register = () => {
                     id="email"
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     placeholder="name@company.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
                     required=""></input>
                 </div>
                 <div>
@@ -88,6 +102,8 @@ const Register = () => {
                     id="password"
                     placeholder="••••••••"
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
                     required=""></input>
                 </div>
                 <div>
@@ -102,6 +118,8 @@ const Register = () => {
                     id="confirm-password"
                     placeholder="••••••••"
                     className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
                     required=""></input>
                 </div>
                 <div className="flex items-start">
@@ -128,7 +146,8 @@ const Register = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 border">
+                  className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 border"
+                  onClick={handleCreateAccount}>
                   Create an account
                 </button>
                 <p className="text-sm font-light text-gray-500 dark:text-gray-400">

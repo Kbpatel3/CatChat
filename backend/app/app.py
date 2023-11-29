@@ -1,6 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
+from flask_socketio import join_room, leave_room, rooms
+from flask_login import login_user
+from flask import request, jsonify
 from config import SECRET_KEY
 
 # Initialize Flask
@@ -15,52 +18,56 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# Sample database
+users = {}
+chats = {}
+emails = []
+passwords = {}
 
-# Routes
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
+# User Authentication Routes
+def authenticate_user(email, password):
+    if email in emails:
+        if passwords[email] == password:
+            return True
+    return False
 
-@socketio.on('join')
-def handle_join(data):
-    room = data['room']
-    join_room(room)
-    print(f'User {data["user"]} joined room {room}')
 
-@socketio.on('leave')
-def handle_leave(data):
-    room = data['room']
-    leave_room(room)
-    print(f'User {data["user"]} left room {room}')
+@socketio.on('login')
+def handle_login(data):
+    email = data.get('email')
+    password = data.get('password')
 
-@socketio.on('message')
-def handle_message(data):
-    room = data['room']
-    send(data['message'], room=room, broadcast=True)
-    print(f'Message from {data["user"]} in room {room}: {data["message"]}')
+    # Authenticate user
+    if authenticate_user(email, password):
+        emit("login_response", {'success': True, 'message': 'Logged in successfully'})
+    else:
+        emit("login_response", {'success': False, 'message': 'Invalid credentials'})
 
-@socketio.on('private_message')
-def handle_private_message(data):
-    recipient = data['recipient']
-    message = data['message']
-    emit('private_message', {'user': data['user'], 'message': message}, room=recipient)
-    print(f'Private message from {data["user"]} to {recipient}: {message}')
 
-@socketio.on('typing')
-def handle_typing(data):
-    room = data['room']
-    emit('typing', {'user': data['user']}, room=room)
+@socketio.on('register')
+def handle_register(data):
+    print("Handling register request")
+    email = data.get('email')
+    password = data.get('password')
 
-@socketio.on('get_users')
-def handle_get_users(data):
-    room = data['room']
-    users = list(get_room_users(room))
-    emit('user_list', {'users': users}, room=room)
+    # Check if the user already exists
+    if email in emails:
+        print("User already exists")
+        emit("register_response", {'success': False, 'message': 'User already exists'})  # TODO Too much info?
+    else:
+        # Create a new user
+        emails.append(email)
+        passwords[email] = password
+        emit("register_response", {'success': True, 'message': 'Account created successfully'})
+
+    print(emails)
+    print(passwords)
+
+
+# Routes for chat
+
 
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5005)
+    socketio.run(app, debug=True, port=5000)

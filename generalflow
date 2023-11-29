@@ -1,0 +1,25 @@
+1) Client goes to the website.
+    1a) Click login
+        - user types in email and password
+        - the email is then checked in the database to determine if the account is actually already existing
+        - once the user is verified, they are logged in and taken to the dashboard/home screen
+    1b) Click Register
+        - Client enters email, password, and password confirmation
+        - Client clicks "Create an account"
+        - The provided information is validated. Once validated, the app routes to the dashboard screen
+
+2) From the dashboard, the client should see a list of all other clients that are in the database.
+    - The client can click on any of the other clients to start a chat with them
+        - If the client clicks on a user that they have already started a chat with, the chat will be opened
+            - The chats must be stored in a database and retrieved when the client clicks on the chat.
+              The stored data can include:
+                The person it is with,
+                previous messages,
+                and other relevant information
+        - If the client clicks on a user that they have not started a chat with, a new chat will be created.
+            - The chat will be stored in the database and the client will be able to send messages to the other client
+            - The chat will be opened and the client will be able to send messages to the other client
+3) The user can start a private chat by selecting a button for a new chat and verifying the desired user
+4) Once a connection is established, the messages will be sent and received as a normal chat should behave
+5) There will be a button to sign out of the website, which will terminate the session the user has with the website
+    - if the user wants to go back to the website, a new login must occur

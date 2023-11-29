@@ -3,6 +3,9 @@
 import React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import io from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 const Login = () => {
   const navigate = useNavigate();
@@ -14,26 +17,33 @@ const Login = () => {
     event.preventDefault(); // Prevent the default form submission behavior
 
     try {
-      const response = await fetch("http://localhost:5000/login", {
-        method: "POST", // Use POST method instead of GET
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      // Check to see if all fields are filled out
+        if (!email || !password) {
+            setErrorMessage("Please fill out all fields");
+            return;
+        }
+
+        // Check if email is valid
+        if (!email.includes("@")) {
+            setErrorMessage("Please enter a valid email");
+            return;
+        }
+
+      socket.emit("login", { email, password });
+
+      // Wait for the server to respond with the user's data
+      socket.once("login_response", (data) => {
+        if (data.success) {
+          console.log(data.message);
+          setErrorMessage("");
+          navigate("/dashboard");
+        } else {
+          console.log(data.message);
+          setErrorMessage(data.message);
+        }
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log(data.message);
-        setErrorMessage("");
-        navigate("/dashboard");
-      } else {
-        console.error(data.error);
-        setErrorMessage(data.error);
-      }
     } catch (error) {
-      console.error("Error during login:", error);
+      console.error("Error during login: ", error);
       setErrorMessage("Error during login. Please try again.");
     }
   };
@@ -68,6 +78,8 @@ const Login = () => {
                   id="email"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="name@company.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   required=""></input>
               </div>
               <div>
@@ -82,6 +94,8 @@ const Login = () => {
                   id="password"
                   placeholder="••••••••"
                   className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
                   required=""></input>
               </div>
               <div className="flex items-center justify-between">
