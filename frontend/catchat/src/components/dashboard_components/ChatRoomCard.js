@@ -1,5 +1,6 @@
 import React from 'react';
 import io from "socket.io-client";
+import { eventEmitter } from '../../events/EventEmitter'
 
 const socket = io('http://localhost:5000');
 const ChatRoomCard = ({ userId, client }) => {
@@ -11,7 +12,12 @@ const ChatRoomCard = ({ userId, client }) => {
         // Join the room with the user id
         socket.emit('createRoom', {client, roomName, userId});
         console.log("Created room " + roomName)
-    }
+
+        // Notify subscribers that a card has been clicked
+        console.log("Emitting cardClicked event")
+        eventEmitter.emit('cardClicked', userId);
+        console.log("Emitted cardClicked event")
+    };
 
     return (
         <div>

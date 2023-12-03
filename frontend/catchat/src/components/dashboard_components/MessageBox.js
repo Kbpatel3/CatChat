@@ -1,17 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import io from 'socket.io-client';
+import { eventEmitter } from "../../events/EventEmitter";
 
 const socket = io('http://localhost:5000');
 
-function MessageBox() {
+function MessageBox({ sender }) {
   const [message, setMessage] = useState('');
+
+
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      console.log('Message submitted:', message);
+      // Set the message state to the input value
+      setMessage(sender + ": " + message);
 
-      // Send the message to the server via the socket connection // TODO
-      socket.emit('message', { message });
+      // // Add to the messages array
+      // setMessages([...messages, message]);
+      //
+      // // Emit the message to the server
+      // socket.emit('message', message);
 
 
     }
