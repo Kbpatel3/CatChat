@@ -107,6 +107,25 @@ def handle_private_message(data):
 
         offline_messages[to_user_id].append({'from_user_id': from_user_id, 'message': message})
 
+
+@socketio.on('newMessage')
+def handle_new_message(data):
+    sender = data.get('userID')
+    message = data.get('newMessage')
+    receiver = data.get('sender')
+    if sender and receiver:
+        room_id = sender + "." + receiver
+        alternate_room_id = receiver + "." + sender
+        print("Appending onto the message history", room_id)
+
+        if room_id in chats:
+            chats[room_id].append({'from_user_id': sender, 'message': message})
+
+        elif alternate_room_id in chats:
+            chats[alternate_room_id].append({'from_user_id': sender, 'message': message})
+
+
+
 @socketio.on('getMessageHistory')
 def handle_get_message_history(data):
     sender = data.get('sender')

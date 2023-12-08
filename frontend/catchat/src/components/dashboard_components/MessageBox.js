@@ -12,15 +12,7 @@ function MessageBox({ sender }) {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       // Set the message state to the input value
-      setMessage(sender + ": " + message);
-
-      // // Add to the messages array
-      // setMessages([...messages, message]);
-      //
-      // // Emit the message to the server
-      // socket.emit('message', message);
-
-
+      eventEmitter.emit('messageSent', message);
     }
   };
 
@@ -29,7 +21,7 @@ function MessageBox({ sender }) {
       <input
         type="text"
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        onChange={(e) => setMessage(sender + ":" + e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Type your message and press Enter"
         className="border border-gray-400 p-2 w-full"
