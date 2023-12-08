@@ -6,12 +6,12 @@ const socket = io("http://localhost:5000");
 
 function MessageList({ sender }) {
   const [messages, setMessages] = useState([]);
-  const[userID, setUserID] = useState("");
+  const[userId, setUserId] = useState("");
 
   useEffect(() => {
     const handleCardClicked = (userId) => {
+      setUserId(userId)
       setMessages([])
-      setUserID(userId);
       console.log("Starting chat with " + userId);
       console.log("From " + sender);
       getMessageHistory(sender, userId);
@@ -23,17 +23,13 @@ function MessageList({ sender }) {
     };
 
     const messageListener = (message) => {
-        console.log("Received message: " + message);
-        message.split(":");
-        const sender = message[0];
-        const newMessage = message[1];
-        socket.emit("newMessage", { sender, newMessage, userID});
+        socket.emit("newMessage", { sender, message, userId });
     }
 
     eventEmitter.on("cardClicked", cardClickListener);
     eventEmitter.on('messageSent', messageListener);
 
-  }, [sender]);
+  }, [sender, userId]);
 
   const getMessageHistory = (sender, receiver) => {
     console.log("Getting message history between " + sender + " and " + receiver);

@@ -110,9 +110,13 @@ def handle_private_message(data):
 
 @socketio.on('newMessage')
 def handle_new_message(data):
-    sender = data.get('userID')
-    message = data.get('newMessage')
-    receiver = data.get('sender')
+    sender = data.get('sender')
+    message = data.get('message')
+    receiver = data.get('userId')
+    print("New message received")
+    print("Sender", sender)
+    print("Receiver", receiver)
+    print("Message", message)
     if sender and receiver:
         room_id = sender + "." + receiver
         alternate_room_id = receiver + "." + sender
@@ -123,6 +127,13 @@ def handle_new_message(data):
 
         elif alternate_room_id in chats:
             chats[alternate_room_id].append({'from_user_id': sender, 'message': message})
+
+        try:
+            print(type(room_id))
+            print(chats[room_id])
+        except:
+            print(type(alternate_room_id))
+            print(chats[alternate_room_id])
 
 
 
