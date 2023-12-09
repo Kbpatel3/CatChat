@@ -5,6 +5,7 @@ from flask_socketio import join_room, leave_room, rooms
 from flask_login import login_user
 from flask import request, jsonify
 from config import SECRET_KEY
+import sqlite3
 
 # Initialize Flask
 app = Flask(__name__)
@@ -26,6 +27,38 @@ passwords = {}  # {user_id: password}
 connected_clients = []  # [user_id]
 active_rooms = {}   # {user_id: [room_id]}
 offline_messages = {}   # {user_id: [{from_user_id: from_user_id, message: message}]}
+
+
+
+# Create a database for the users, chats, emails seperated, passwords seperated,
+# connected clients, active rooms, and offline messages
+# connect to the database
+# conn = sqlite3.connect('database.db')
+#
+# # Create a cursor to execute SQL commands and queries
+# cursor = conn.cursor()
+#
+# # Create a table for the users
+# cursor.execute("CREATE TABLE users (user_id TEXT, email TEXT, password TEXT)")
+#
+# # Create a table for the chats
+# cursor.execute("CREATE TABLE chats (room_id TEXT, from_user_id TEXT, message TEXT)")
+#
+# # Create a table for the emails
+# cursor.execute("CREATE TABLE emails (email TEXT)")
+#
+# # Create a table for the passwords
+# cursor.execute("CREATE TABLE passwords (user_id TEXT, password TEXT)")
+#
+# # Create a table for the connected clients
+# cursor.execute("CREATE TABLE connected_clients (user_id TEXT)")
+#
+# # Create a table for the active rooms
+# cursor.execute("CREATE TABLE active_rooms (user_id TEXT, room_id TEXT)")
+#
+# # Create a table for the offline messages
+# cursor.execute("CREATE TABLE offline_messages (user_id TEXT, from_user_id TEXT, message TEXT)")
+
 
 
 # TODO Base Connection Routes
