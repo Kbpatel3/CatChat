@@ -7,16 +7,30 @@ import io from "socket.io-client";
 
 const socket = io("http://localhost:5000");
 
+/**
+ * Login page component
+ * @returns {Element} JSX
+ */
 const Login = () => {
+  // Use the navigate hook to redirect the user to the dashboard after login
   const navigate = useNavigate();
+
+  // State variables for the login form
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  /**
+   * Handle the login form submission (Async)
+   * @param event The form submission event
+   * @returns {Promise<void>} Nothing
+   */
   const handleLogin = async (event) => {
     console.log("Login button clicked");
-    event.preventDefault(); // Prevent the default form submission behavior
+    // Prevent the default form submission behavior
+    event.preventDefault();
 
+    // Try to log in
     try {
       // Check to see if all fields are filled out
         if (!userId || !password) {
@@ -24,25 +38,34 @@ const Login = () => {
             return;
         }
 
+        // Send the login request to the server passing in the user's credentials (userId and password)
       socket.emit("login", { userId, password });
 
-      // Wait for the server to respond with the user's data
+      // Wait for the server to respond with the login_response event (success or failure)
       socket.once("login_response", (data) => {
+        // If the login was successful, redirect the user to the dashboard
         if (data.success) {
           console.log(data.message);
+          // Clear the error message
           setErrorMessage("");
+          // Redirect the user to the dashboard and pass in the userId as state
           navigate("/dashboard", { state: { userId: userId } });
         } else {
+          // If the login was not successful, display the error message
           console.log(data.message);
           setErrorMessage(data.message);
         }
       });
     } catch (error) {
+        // If there was an error, log it to the console and display the error message
       console.error("Error during login: ", error);
       setErrorMessage("Error during login. Please try again.");
     }
   };
 
+  /**
+   * Route the user to the register page
+   */
   const routeRegister = () => {
     navigate("/register");
   };

@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * Terms and Conditions component
+ * @returns {React.JSX.Element} Terms and Conditions page
+ */
 const TermsAndConditions = () => (
     <section className='bg-gray-50 dark:bg-gray-900'>
   <div className="flex flex-col px-6 py-8 mx-auto md:h-screen lg:py-0 text-white">

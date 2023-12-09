@@ -9,17 +9,32 @@ import UserName from "../dashboard_components/UserName.js";
 import ChatLists from "../dashboard_components/ChatLists.js";
 import MessageList from "../dashboard_components/MessageList.js";
 
+// Connect to the socket server
 const socket = io('http://localhost:5000');
 
+/**
+ * Dashboard component
+ * @returns {Element} Dashboard component
+ */
 function Dashboard() {
+    // Use the location hook to get the user id
     const location = useLocation();
+
+    // Get the user id from the location state
     const clientId = location.state.userId;
+
+    // Set the client id
     const [client, setClient] = useState("");
 
+    // When the component mounts, connect to the socket server
     useEffect(() => {
+        // Set the client id
         setClient(clientId);
+
+        // Connect to the socket server by emitting a connection event
         socket.on('connect', () => {
             console.log("Connected");
+            // Room name is the user id
             const roomName =  client;
             console.log("Room ID: " + roomName);
 

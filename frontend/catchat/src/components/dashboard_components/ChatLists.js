@@ -2,15 +2,25 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import ChatRoomCard from './ChatRoomCard';
 
+// Create a socket connection to the server
 const socket = io('http://localhost:5000');
 
+/**
+ * ChatLists component. This component renders a list of chat rooms on the left side of the dashboard.
+ * @param client - The client's username that is the owner of the dashboard
+ * @returns {Element} - Returns the JSX element that renders the chat rooms
+ */
 function ChatLists({client}) {
+    // State variable to store the chat rooms list from the server
     const [chatRooms, setChatRooms] = useState([]);
+
+    // On component mount, get the chat rooms from the server by calling the getConnectedClients event
+    // Dependent on the chatRooms state variable
     useEffect(() => {
-        //console.log("Getting chat rooms from server")
+        // Call server's getConnectedClients event
         socket.emit('getConnectedClients');
 
-        // Call server's getChatRooms event
+        // When the server responds with the list of chat rooms, set the chatRooms state variable
         socket.once('ConnectedClients', (data) => {
             setChatRooms(data.clients);
         });

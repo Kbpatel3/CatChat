@@ -3,9 +3,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+/**
+ * Home page component for the app.
+ * @returns {Element} JSX
+ */
 const Home = () => {
   // Add your login logic here
 
+  // Return JSX that displays the landing page which includes a welcome message and buttons for Register and Login
   return (
     <section className="bg-gray-50 dark:bg-gray-900">
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
@@ -30,4 +35,5 @@ const Home = () => {
   );
 }
 
+// Export the Home component
 export default Home;

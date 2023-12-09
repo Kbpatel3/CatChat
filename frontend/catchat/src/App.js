@@ -7,7 +7,12 @@ import TermsAndConditions from './components/TermsAndConditions';
 import Dashboard from './components/Chat/Dashboard';
 import './styles.css';
 
+/**
+ * App component that handles routing
+ * @returns {Element} JSX
+ */
 function App() {
+  // JSX to render based on route
   return (
     <Router>
       <div>

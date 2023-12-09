@@ -5,8 +5,14 @@ import io from "socket.io-client";
 
 const socket = io("http://localhost:5000");
 
+/**
+ * Register component for the registration page
+ * @returns {Element} JSX
+ */
 const Register = () => {
+  // Use the navigate hook to redirect the user to the dashboard
   const navigate = useNavigate();
+  // State variables for the form fields
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
@@ -14,10 +20,17 @@ const Register = () => {
   const [terms, setTerms] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  /**
+   * Handles the create account button click (Async)
+   * @param event The event object
+   * @returns {Promise<void>} Nothing
+   */
   const handleCreateAccount = async (event) => {
     console.log("Handling create account...");
+    // Prevent the default form submission behavior
     event.preventDefault();
 
+    // Try to register the user
     try {
       // Check to see if all fields are filled out
       if (!email || !password || !confirmPassword || !userId) {
@@ -25,12 +38,13 @@ const Register = () => {
         return;
       }
 
+      // Check to see if the user accepted the terms and conditions
       if (!terms) {
         setErrorMessage("Please accept the terms and conditions");
         return;
       }
 
-      // Check if email is valid
+      // Check if email is valid (contains @)
       if (!email.includes("@")) {
         setErrorMessage("Please enter a valid email");
         return;
@@ -42,27 +56,37 @@ const Register = () => {
         return;
       }
 
+      // Send the registration request to the server passing in the email, userId, and password
       socket.emit("register", { email, userId, password });
 
-      // Wait for the server to respond with the user's data
+      // Wait for the server to respond with the success or failure message (Front end calls back end's register_response event)
       socket.on("register_response", (data) => {
         console.log("Received register response from server")
+        // If the success property is true, then the registration was successful
         if (data.success) {
           console.log(data.message);
+          // Clear the error message
           setErrorMessage('');
+          // Navigate to the dashboard passing in the userId as state
           navigate('/dashboard' , { state: { userId: userId } });
         } else {
           console.error(data.message);
+          // Set the error message because the registration failed and the backend sent back a failure message
           setErrorMessage(data.message);
         }
         });
     } catch (error) {
       console.error('Error during registration:', error);
+      // Set the error message because the registration failed and the backend threw an error
       setErrorMessage('Error during registration');
     }
   };
 
+  /**
+   * Simple function to route the user to the login page
+   */
   const routeLogin = () => {
+    // Use the navigate hook to redirect the user to the login page
     navigate("/login");
   };
 
