@@ -26,22 +26,20 @@ function Dashboard() {
     // Set the client id
     const [client, setClient] = useState("");
 
-    // Called on every render
+    // Called on component mount
     useEffect(() => {
         // Set the client id
         setClient(clientId);
 
-        // Connect to the socket server by emitting a connection event
-        socket.on('connect', () => {
-            console.log("Connected");
-            // Room name is the user id
-            const roomName =  client;
-            console.log("Room ID: " + roomName);
+        // Register user on the backend
+        console.log("Connected");
+        // Room name is the user id
+        const roomName =  client;
+        console.log("Room ID: " + roomName);
 
-            // Join the room with the user id
-            socket.emit('connection', roomName);
-        });
-    });
+        // Join the room with the user id
+        socket.emit('connection', roomName);
+    }, []);
 
 
     return (
