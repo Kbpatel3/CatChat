@@ -26,7 +26,7 @@ function Dashboard() {
     // Set the client id
     const [client, setClient] = useState("");
 
-    // Called on component mount
+    // Called on every render
     useEffect(() => {
         // Set the client id
         setClient(clientId);
