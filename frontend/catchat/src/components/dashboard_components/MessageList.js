@@ -72,7 +72,7 @@ function MessageList({ sender }) {
     socket.emit("getMessageHistory", { sender, receiver });
 
     // Listen to the socket for the message history
-    socket.once("messageHistory", (data) => {
+    socket.on("messageHistory", (data) => {
       console.log("Received message history");
       console.log(data);
 
