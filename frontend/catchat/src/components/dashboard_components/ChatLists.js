@@ -21,7 +21,7 @@ function ChatLists({client}) {
         socket.emit('getConnectedClients');
 
         // When the server responds with the list of chat rooms, set the chatRooms state variable
-        socket.once('ConnectedClients', (data) => {
+        socket.on('ConnectedClients', (data) => {
             setChatRooms(data.clients);
         });
     });
