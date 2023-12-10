@@ -26,7 +26,7 @@ function Dashboard() {
     // Set the client id
     const [client, setClient] = useState("");
 
-    // When the component mounts, connect to the socket server
+    // Called on every render
     useEffect(() => {
         // Set the client id
         setClient(clientId);
