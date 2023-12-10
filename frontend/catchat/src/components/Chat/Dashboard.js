@@ -39,7 +39,7 @@ function Dashboard() {
 
         // Join the room with the user id
         socket.emit('connection', roomName);
-    }, []);
+    });
 
 
     return (
