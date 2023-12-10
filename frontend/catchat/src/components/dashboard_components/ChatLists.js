@@ -24,7 +24,7 @@ function ChatLists({client}) {
         socket.once('ConnectedClients', (data) => {
             setChatRooms(data.clients);
         });
-    }, [chatRooms]);
+    });
 
     return (
         <div>
