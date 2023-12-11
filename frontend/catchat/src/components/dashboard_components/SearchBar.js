@@ -9,7 +9,7 @@ function SearchBar({ onChange }) {
      * @param e - event object for the search bar which contains the search query
      */
   const handleSearchChange = (e) => {
-    console.log('Search query:', e.target.value)
+    //console.log('Search query:', e.target.value)
     // TODO: Send the search query to the server via the socket connection
   }
 

@@ -30,8 +30,8 @@ function UserName() {
                     // If userName is not empty, render the actual userName
                     userName
                 ) : (
-                    // If userName is empty, render a placeholder text
-                    <span className="text-wcu-gold">Username</span>
+                    // Render nothing
+                    ''
                 )}
             </div>
         </div>

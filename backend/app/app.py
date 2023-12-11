@@ -135,6 +135,8 @@ def handle_room_creation(data: dict) -> None:
         if variation1 == variation2 and variation1 not in active_rooms[client]:
             # Add the room to the list of active rooms for the client
             active_rooms[client].append(room_id)
+            chats[room_id] = []
+            chats[room_id].append({'from_user_id': client, 'message': "You have joined the room"})
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
         elif variation1 not in active_rooms[client] and variation1 not in active_rooms[user_id] and variation2 not in \
@@ -142,6 +144,8 @@ def handle_room_creation(data: dict) -> None:
             # Add the room to the list of active rooms for the client and the other user
             active_rooms[client].append(room_id)
             active_rooms[user_id].append(room_id)
+            chats[room_id] = []
+            chats[room_id].append({'from_user_id': client, 'message': "You have joined the room2"})
 
     # Print the list of active rooms for the user
     print(active_rooms)
@@ -212,13 +216,6 @@ def handle_new_message(data: dict) -> None:
         # If the alternate room id is in the list of chats, append the message to the list of messages
         elif alternate_room_id in chats:
             chats[alternate_room_id].append({'from_user_id': sender, 'message': message})
-
-        try:
-            print(type(room_id))
-            print(chats[room_id])
-        except:
-            print(type(alternate_room_id))
-            print(chats[alternate_room_id])
 
 
 @socketio.on('getMessageHistory')

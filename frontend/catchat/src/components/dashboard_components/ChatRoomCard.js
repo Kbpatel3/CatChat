@@ -18,20 +18,20 @@ const ChatRoomCard = ({ userId, client }) => {
      * @param userId The user id that corresponds to the card that was clicked on
      */
     const handleCardClick = (userId) => {
-        console.log("Clicked on " + userId);
-        console.log("From " + client);
+        // console.log("Clicked on " + userId);
+        // console.log("From " + client);
 
         // Create a room name by concatenating the client and user id
         const roomName = client + "." + userId;
 
         // Call the createRoom event on the server passing in the client, room name, and user id
         socket.emit('createRoom', {client, roomName, userId});
-        console.log("Created room " + roomName)
+        // console.log("Created room " + roomName)
 
         // Notify subscribers that a card has been clicked
-        console.log("Emitting cardClicked event")
+        // console.log("Emitting cardClicked event")
         eventEmitter.emit('cardClicked', userId);
-        console.log("Emitted cardClicked event")
+        // console.log("Emitted cardClicked event")
     };
 
     return (

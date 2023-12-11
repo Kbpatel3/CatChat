@@ -19,46 +19,47 @@ function MessageList({ sender }) {
 
   // On every render, do the following
   useEffect(() => {
+    // Listening for our EventEmitter events
+    eventEmitter.on("cardClicked", cardClickListener);
+    eventEmitter.on('messageSent', messageListener);
+  });
 
-    /**
-     * Handle a card being clicked. This is a callback function that is called when the 'cardClick' event is emitted
-     * @param userId The user id of the user that the logged in user is chatting with
-     */
-    const handleCardClicked = (userId) => {
-      // Set the user id state to the input value
-      setUserId(userId)
-
-      // Clear the messages state
-      setMessages([])
-      console.log("Starting chat with " + userId);
-      console.log("From " + sender);
-      // Get the message history between the logged in user and the user that they are chatting with
-      getMessageHistory(sender, userId);
-    };
-
-    /**
-     * Callback function that is called when the 'cardClicked' event is emitted
-     * @param userId The user id of the user that the logged in user is chatting with
-     */
+  /**
+  //    * Callback function that is called when the 'cardClicked' event is emitted
+  //    * @param userId The user id of the user that the logged in user is chatting with
+  //    */
     const cardClickListener = (userId) => {
       // Call the handleCardClicked function
       handleCardClicked(userId);
     };
 
     /**
-     * Callback function that is called when the 'messageSent' event is emitted
-     * @param message The message that was sent
-     */
+  //    * Handle a card being clicked. This is a callback function that is called when the 'cardClick' event is emitted
+  //    * @param userId The user id of the user that the logged in user is chatting with
+  //    */
+    const handleCardClicked = (userId) => {
+      // Set the user id state to the input value
+      setUserId(userId)
+
+      // Clear the messages state
+      setMessages([])
+      //console.log("Starting chat with " + userId);
+      //console.log("From " + sender);
+      // Get the message history between the logged in user and the user that they are chatting with
+      getMessageHistory(sender, userId);
+    };
+
+    /**
+  //    * Callback function that is called when the 'messageSent' event is emitted
+  //    * @param message The message that was sent
+  //    */
     const messageListener = (message) => {
+        console.log("Message sent: " + message);
+        console.log("To: " + userId);
+        console.log("From: " + sender);
         // Send the message to the server via the socket connection passing in the sender, message, and userId
         socket.emit("newMessage", { sender, message, userId });
     }
-
-    // Listen to the event emitter for a card being clicked and a message being sent
-    eventEmitter.on("cardClicked", cardClickListener);
-    eventEmitter.on('messageSent', messageListener);
-
-  }, [sender, userId]);
 
   /**
    * Get the message history between the logged in user and the user that they are chatting with from the server
@@ -66,15 +67,15 @@ function MessageList({ sender }) {
    * @param receiver The username of the user that the logged in user is chatting with
    */
   const getMessageHistory = (sender, receiver) => {
-    console.log("Getting message history between " + sender + " and " + receiver);
+    //console.log("Getting message history between " + sender + " and " + receiver);
 
     // Send the server a request for the message history between the logged in user and the user that they are chatting with
     socket.emit("getMessageHistory", { sender, receiver });
 
     // Listen to the socket for the message history
     socket.on("messageHistory", (data) => {
-      console.log("Received message history");
-      console.log(data);
+      //console.log("Received message history");
+      //console.log(data);
 
       // Set the message state to the input value
       setMessages(data.messages);

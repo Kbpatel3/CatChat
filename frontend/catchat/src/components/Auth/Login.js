@@ -26,7 +26,7 @@ const Login = () => {
    * @returns {Promise<void>} Nothing
    */
   const handleLogin = async (event) => {
-    console.log("Login button clicked");
+    //console.log("Login button clicked");
     // Prevent the default form submission behavior
     event.preventDefault();
 

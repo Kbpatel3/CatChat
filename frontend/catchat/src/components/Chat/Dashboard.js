@@ -32,10 +32,10 @@ function Dashboard() {
         setClient(clientId);
 
         // Register user on the backend
-        console.log("Connected");
+        //console.log("Connected");
         // Room name is the user id
         const roomName =  client;
-        console.log("Room ID: " + roomName);
+        //console.log("Room ID: " + roomName);
 
         // Join the room with the user id
         socket.emit('connection', roomName);

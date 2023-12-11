@@ -26,7 +26,7 @@ const Register = () => {
    * @returns {Promise<void>} Nothing
    */
   const handleCreateAccount = async (event) => {
-    console.log("Handling create account...");
+    // console.log("Handling create account...");
     // Prevent the default form submission behavior
     event.preventDefault();
 
