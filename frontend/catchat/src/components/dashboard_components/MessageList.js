@@ -20,16 +20,23 @@ function MessageList({ sender }) {
   // Reference to the end of the message list
   const messageEndRef = React.useRef(null);
 
+  // State to see if the user is typing
+    const [isTyping, setIsTyping] = useState(false);
+
   // On every render, do the following
   useEffect(() => {
     // Listening for our EventEmitter events
     eventEmitter.on("cardClicked", cardClickListener);
     eventEmitter.on('messageSent', messageListener);
+    eventEmitter.on("typing", typingListener);
+    eventEmitter.on("notTyping", notTypingListener);
 
     return () => {
         // Remove the event listeners
         eventEmitter.unsubscribe("cardClicked", cardClickListener);
         eventEmitter.unsubscribe('messageSent', messageListener);
+        eventEmitter.unsubscribe("typing", typingListener);
+        eventEmitter.unsubscribe("notTyping", notTypingListener);
 
         // Remove the socket listeners
         socket.off("messageHistory");
@@ -90,6 +97,22 @@ function MessageList({ sender }) {
         console.log(messages);
     }
 
+    const typingListener = (typer) => {
+        console.log(typer + " is typing...")
+        console.log(sender + " is typing...")
+        if (typer === sender) {
+            setIsTyping(true);
+        }
+    }
+
+    const notTypingListener = (typer) => {
+        console.log(typer + " is not typing...")
+        console.log(sender + " is not typing...")
+        if (typer === sender) {
+            setIsTyping(false);
+        }
+    }
+
   /**
    * Get the message history between the logged-in user and the user that they are chatting with from the server
    * @param sender The username of the user who is logged in
@@ -123,6 +146,12 @@ function MessageList({ sender }) {
               </div>
             </li>
           ))}
+            {/* Typing Indicator */}
+            {isTyping && (
+                <li className={"my-2"}>
+                    <p className={"text-right"}>{sender} is typing...</p>
+                </li>
+            )}
           {/* Reference for end of message list */}
           <div ref={messageEndRef} />
         </ul>

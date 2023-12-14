@@ -22,6 +22,15 @@ function MessageBox({ sender }) {
   const handleChange = (e) => {
     // Set the message state to the input value
     setMessageContent(e.target.value);
+
+    // Emit a typing event to the server
+    console.log(e.target.value)
+    if (e.target.value !== '') {
+      eventEmitter.emit('typing', sender);
+    }
+    else {
+      eventEmitter.emit('notTyping', sender);
+    }
   }
 
   /**
@@ -31,6 +40,9 @@ function MessageBox({ sender }) {
   const handleEnterKeyPress = (e) => {
     // If the enter key was pressed and the message box is not empty
     if (e.key === 'Enter' && messageContent !== '') {
+      // Create an event called "notTyping" and pass the sender as the payload
+      eventEmitter.emit('notTyping', sender);
+
       // Create an event called 'messageSent' and pass the message content as the payload
       eventEmitter.emit('messageSent', messageContent);
 
