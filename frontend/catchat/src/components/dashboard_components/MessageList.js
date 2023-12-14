@@ -14,7 +14,7 @@ function MessageList({ sender }) {
   // State to store the messages
   const [messages, setMessages] = useState([]);
 
-  // State to store the user id of the user that the logged in user is chatting with
+  // State to store the user id of the user that the logged-in user is chatting with
   const[userId, setUserId] = useState("");
 
   // Reference to the end of the message list
@@ -37,23 +37,21 @@ function MessageList({ sender }) {
     }
   });
 
-  // On component mount and when the messages state changes, do the following
-  useEffect(() => {
-    if (messages.length === 0) {
-        console.log("Messages state cleared, now fetching message history.");
-        getMessageHistory(sender, userId);
-    }
-  }, [messages]);
 
   // Scroll to the bottom of the message list when the messages state changes
     useEffect(() => {
       messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
+    // Constantly get the message history between the logged-in user and the user that they are chatting with
+    useEffect(() => {
+        getMessageHistory(sender, userId)
+    });
+
 
   /**
   //    * Callback function that is called when the 'cardClicked' event is emitted
-  //    * @param userId The user id of the user that the logged in user is chatting with
+  //    * @param userId The user id of the user that the logged-in user is chatting with
   //    */
     const cardClickListener = (userId) => {
       // Call the handleCardClicked function
@@ -62,7 +60,7 @@ function MessageList({ sender }) {
 
     /**
   //    * Handle a card being clicked. This is a callback function that is called when the 'cardClick' event is emitted
-  //    * @param userId The user id of the user that the logged in user is chatting with
+  //    * @param userId The user id of the user that the logged-in user is chatting with
   //    */
     const handleCardClicked = (userId) => {
       // Set the user id state to the input value
@@ -72,7 +70,7 @@ function MessageList({ sender }) {
       setMessages([])
       //console.log("Starting chat with " + userId);
       //console.log("From " + sender);
-      // Get the message history between the logged in user and the user that they are chatting with
+      // Get the message history between the logged-in user and the user that they are chatting with
       getMessageHistory(sender, userId);
     };
 
@@ -88,30 +86,24 @@ function MessageList({ sender }) {
         // Send the message to the server via the socket connection passing in the sender, message, and userId
         socket.emit("newMessage", { sender, message, userId });
 
-        // Clear the message state
-        setMessages([]);
-
         console.log("Clearing messages")
         console.log(messages);
     }
 
   /**
-   * Get the message history between the logged in user and the user that they are chatting with from the server
+   * Get the message history between the logged-in user and the user that they are chatting with from the server
    * @param sender The username of the user who is logged in
-   * @param receiver The username of the user that the logged in user is chatting with
+   * @param receiver The username of the user that the logged-in user is chatting with
    */
   const getMessageHistory = (sender, receiver) => {
     // Remove the previous listener
     socket.off("messageHistory");
 
-    // Send the server a request for the message history between the logged in user and the user that they are chatting with
+    // Send the server a request for the message history between the logged-in user and the user that they are chatting with
     socket.emit("getMessageHistory", { sender, receiver });
 
     // Listen to the socket for the message history
     socket.on("messageHistory", (data) => {
-      //console.log("Received message history");
-      //console.log(data);
-
       // Set the message state to the input value
       setMessages(data.messages);
     });

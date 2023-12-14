@@ -136,7 +136,6 @@ def handle_room_creation(data: dict) -> None:
             # Add the room to the list of active rooms for the client
             active_rooms[client].append(room_id)
             chats[room_id] = []
-            chats[room_id].append({'from_user_id': client, 'message': "You have joined the room"})
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
         elif variation1 not in active_rooms[client] and variation1 not in active_rooms[user_id] and variation2 not in \
@@ -145,7 +144,6 @@ def handle_room_creation(data: dict) -> None:
             active_rooms[client].append(room_id)
             active_rooms[user_id].append(room_id)
             chats[room_id] = []
-            chats[room_id].append({'from_user_id': client, 'message': "You have joined the room2"})
 
     # Print the list of active rooms for the user
     print(active_rooms)
