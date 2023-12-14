@@ -105,6 +105,7 @@ function MessageList({ sender }) {
     // Listen to the socket for the message history
     socket.on("messageHistory", (data) => {
       // Set the message state to the input value
+        // Loop over data.messages and decrypt each message, sender, and receiver
       setMessages(data.messages);
     });
   };

@@ -209,10 +209,12 @@ def handle_new_message(data: dict) -> None:
 
         # If the room id is in the list of chats, append the message to the list of messages
         if room_id in chats:
+            # Encrypted message and sender and then append to the list of messages
             chats[room_id].append({'from_user_id': sender, 'message': message})
 
         # If the alternate room id is in the list of chats, append the message to the list of messages
         elif alternate_room_id in chats:
+            # Encrypted message and sender and then append to the list of messages
             chats[alternate_room_id].append({'from_user_id': sender, 'message': message})
 
 
