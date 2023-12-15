@@ -47,7 +47,7 @@ function MessageBox({ sender }) {
         onChange={handleChange}
         onKeyDown={handleEnterKeyPress}
         placeholder="Type your message and press Enter"
-        className="border border-gray-400 p-2 w-full"
+        className="border border-gray-400 p-2 w-full bg-gray-300"
       />
     </div>
   );
