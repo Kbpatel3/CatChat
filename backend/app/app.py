@@ -75,7 +75,6 @@ def handle_connection(user_id: str) -> None:
     :param user_id: The user id of the user connecting to the server
     :return: None
     """
-    print("Connection established")
 
     # Create a new room for the user and join it. The room name is passed as the user id
     if user_id not in connected_clients and user_id != "":
@@ -117,7 +116,6 @@ def handle_room_creation(data: dict) -> None:
     client = data.get('client')
     room_id = data.get('roomName')
     user_id = data.get('userId')
-    print("Creating room")
 
     # If the room does not exist, create it and join it
     if room_id not in active_rooms.values():
@@ -202,10 +200,6 @@ def handle_new_message(data: dict) -> None:
     sender = data.get('sender')
     message = data.get('message')
     receiver = data.get('userId')
-    print("New message received")
-    print("Sender", sender)
-    print("Receiver", receiver)
-    print("Message", message)
 
     # If the sender and receiver are not empty
     if sender and receiver:
@@ -213,7 +207,6 @@ def handle_new_message(data: dict) -> None:
         room_id = sender + "." + receiver
         # The alternate room id is the concatenation of the receiver and sender
         alternate_room_id = receiver + "." + sender
-        print("Appending onto the message history", room_id)
 
         # If the room id is in the list of chats, append the message to the list of messages
         if room_id in chats:
@@ -224,8 +217,6 @@ def handle_new_message(data: dict) -> None:
             encrypted_message = encrypt(message, key)
             encrypted_sender = encrypt(sender, key)
 
-            print("Encrypted message is:", encrypted_message)
-            print("Encrypted sender is:", encrypted_sender)
             chats[room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
 
         # If the alternate room id is in the list of chats, append the message to the list of messages
@@ -237,8 +228,6 @@ def handle_new_message(data: dict) -> None:
             encrypted_message = encrypt(message, key)
             encrypted_sender = encrypt(sender, key)
 
-            print("Encrypted message is:", encrypted_message)
-            print("Encrypted sender is:", encrypted_sender)
             chats[alternate_room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
 
 
@@ -306,9 +295,6 @@ def decrypt_messages(room_id: str) -> list:
         # Decrypt the message and sender
         decrypted_message = decrypt(message['message'], key)
         decrypted_sender = decrypt(message['from_user_id'], key)
-
-        print("Decrypted message is:", decrypted_message)
-        print("Decrypted sender is:", decrypted_sender)
 
         decrypted_messages.append(
             {'from_user_id': decrypted_sender.decode(), 'message': decrypted_message.decode()})
