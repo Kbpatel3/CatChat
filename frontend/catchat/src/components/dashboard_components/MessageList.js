@@ -55,6 +55,26 @@ function MessageList({ sender }) {
         getMessageHistory(sender, userId)
     });
 
+    // UseEffect to listen for typing events
+    useEffect(() => {
+        console.log("Listening for typing events")
+        socket.on("user_typing", (data) => {
+            console.log("Other User is typing...")
+            console.log(data);
+            if (data.typer === userId) {
+                setIsTyping(true);
+            }
+        })
+
+        socket.on('user_not_typing', (data) => {
+            console.log("Other User is not typing...")
+            console.log(data);
+            if (data.typer === userId) {
+                setIsTyping(false);
+            }
+        });
+    });
+
 
   /**
   //    * Callback function that is called when the 'cardClicked' event is emitted

@@ -22,12 +22,11 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Sample database
 users = {}  # {user_id: {email: email, password: password}}
 chats = {}  # {room_id: [{from_user_id: from_user_id, message: message}]}
-emails = [] # [email]
+emails = []  # [email]
 passwords = {}  # {user_id: password}
 connected_clients = []  # [user_id]
-active_rooms = {}   # {user_id: [room_id]}
-offline_messages = {}   # {user_id: [{from_user_id: from_user_id, message: message}]}
-
+active_rooms = {}  # {user_id: [room_id]}
+offline_messages = {}  # {user_id: [{from_user_id: from_user_id, message: message}]}
 
 
 # Create a database for the users, chats, emails seperated, passwords seperated,
@@ -58,7 +57,6 @@ offline_messages = {}   # {user_id: [{from_user_id: from_user_id, message: messa
 #
 # # Create a table for the offline messages
 # cursor.execute("CREATE TABLE offline_messages (user_id TEXT, from_user_id TEXT, message TEXT)")
-
 
 
 # TODO Base Connection Routes
@@ -243,6 +241,30 @@ def handle_get_message_history(data: dict) -> None:
         # If the alternate room id is in the list of chats, emit the message history to the front end
         elif alternate_room_id in chats:
             emit('messageHistory', {'messages': chats[alternate_room_id]})
+
+
+@socketio.on('typing')
+def handle_typing(data: dict) -> None:
+    """
+    Handles a typing event from the front end
+    :param data: The data passed from the front end, which contains the sender
+    :return: None
+    """
+    print("Handling typing event")
+    print(data)
+    emit('user_typing', {'typer': data})
+
+
+@socketio.on('stop_typing')
+def handle_stop_typing(data: dict) -> None:
+    """
+    Handles a stop typing event from the front end
+    :param data: The data passed from the front end, which contains the sender
+    :return: None
+    """
+    print("Handling stop typing event")
+    print(data)
+    emit('user_not_typing', {'typer': data})
 
 
 # TODO User Authentication Routes
