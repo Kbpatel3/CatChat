@@ -31,7 +31,7 @@ function ChatLists({client}) {
             {chatRooms.length === 0 ? (
                 <div className="text-center text-gray-500">No Active Clients</div>
             ) : (
-                <div className={"max-h-96 overflow-y-auto"}>
+                <div className={"max-h-[43rem] overflow-y-auto"}>
                     {chatRooms.map((room) => (
                         <ChatRoomCard userId={room} client={client}/>
                     ))}
