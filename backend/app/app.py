@@ -397,11 +397,11 @@ def handle_register(data: dict) -> None:
         emit("register_response",
              {'success': False, 'message': 'Username is banned, please choose another'})
 
-    elif not meets_nist_requirements(password):
-        print("Password does not meet NIST requirements")
-        emit("register_response",
-             {'success': False,
-              'message': 'Password does not meet NIST requirements. Password must be at least 8 characters long and contain a number, uppercase letter, lowercase letter, and special character'})
+    # elif not meets_nist_requirements(password):
+    #     print("Password does not meet NIST requirements")
+    #     emit("register_response",
+    #          {'success': False,
+    #           'message': 'Password does not meet NIST requirements. Password must be at least 8 characters long and contain a number, uppercase letter, lowercase letter, and special character'})
     else:
         # Create a new user and add them to the database
 
