@@ -24,15 +24,6 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-#Sample database
-#users = {}  # {user_id: {email: email, password: password}}
-#chats = {}  # {room_id: [{from_user_id: from_user_id, message: message}]}
-#emails = []  # [email]
-#passwords = {}  # {user_id: password}
-#connected_clients = []  # [user_id]
-#active_rooms = {}  # {user_id: [room_id]}
-# rooms_and_keys = {}  # {room_id: key}
-
 # Constants
 SYM_KEY_LENGTH = 32
 DIGEST_LENGTH = 64
@@ -49,9 +40,6 @@ def handle_connection(user_id: str) -> None:
     # Create a new room for the user and join it. The room name is passed as the user id
     if not database.get_connected_client(user_id) and user_id != "":
         join_room(user_id)
-
-        # Add the user to the list of connected clients
-        #connected_clients.append(user_id)
 
         # Add the user to the database
         database.add_connected_client(user_id)
@@ -101,39 +89,25 @@ def handle_room_creation(data: dict) -> None:
 
         # If the room id is the same as the variation, then that means the user is trying to create a room with themselves
         if variation1 == variation2 and (client_active_room is None or room_id not in client_active_room):
-            # Add the room to the list of active rooms for the client
-            #active_rooms[client].append(room_id)
-
             # Add the room id to the active rooms table in the database
             database.add_active_room(client, room_id)
-
-            #rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
 
             # Add the key to the rooms_and_keys database
             key = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
             print("Key", key)
             database.add_room_and_key(room_id, key)
 
-            #chats[room_id] = []
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
         elif variation1 not in (client_active_room or []) and variation1 not in (user_active_room or []) and variation2 not in (client_active_room or []) and variation2 not in (user_active_room or []):
-            # Add the room to the list of active rooms for the client and the other user
-            #active_rooms[client].append(room_id)
-            #active_rooms[user_id].append(room_id)
-
             # Add the room id to the active rooms table in the database
             database.add_active_room(client, room_id)
             database.add_active_room(user_id, room_id)
 
-            #rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
-
             # Add the key to the rooms_and_keys database
             key = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
             print("Key", key)
             database.add_room_and_key(room_id, key)
-
-            #chats[room_id] = []
 
     # Print the list of active rooms for the user
     print(database.get_active_rooms())
@@ -262,15 +236,8 @@ def handle_get_message_history(data: dict) -> None:
             emit('messageHistory', {'messages': decrypted_messages})
 
 def decrypt_messages(room_id: str) -> list:
-    # List of dictionaries
-    #messages = chats[room_id]
-
     # Get the messages from the database for the room
     messages = database.get_chat(room_id)
-
-    #[{'from_user_id': HASH in b'' form, 'message': ENCRYPTED MESSAGE in b'' form}]
-
-    #key = rooms_and_keys[room_id]
 
     # Get the key from the database
     key = database.get_room_and_key(room_id)
@@ -376,21 +343,14 @@ def handle_register(data: dict) -> None:
     else:
         # Create a new user and add them to the database
 
-        # Add the email to the list of emails
-        #emails.append(email)
-
         # Add the email to the database
         database.add_email(email)
 
         # Add the password for the user id to the list of passwords
         # TODO Salt and hash the password before adding it to the list of passwords
 
-        #passwords[user_id] = password
         # Add the password to the database
         database.add_password(user_id, password)
-
-        # Add the user to the database, user id holds the email and password
-        #users[user_id] = {'email': email, 'password': password}
 
         # Add the user to the database with the email and password
         database.add_user(user_id, email, password)
