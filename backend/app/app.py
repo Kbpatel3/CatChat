@@ -7,10 +7,10 @@ from flask_socketio import join_room, leave_room, rooms
 from flask_login import login_user
 from flask import request, jsonify
 from config import SECRET_KEY
-import sqlite3
 import stream_cipher
 import Crypto.Random
 import Crypto.Hash.SHA256
+import database
 
 # Initialize Flask
 app = Flask(__name__)
@@ -25,52 +25,17 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 #Sample database
-users = {}  # {user_id: {email: email, password: password}}
+#users = {}  # {user_id: {email: email, password: password}}
 chats = {}  # {room_id: [{from_user_id: from_user_id, message: message}]}
-emails = []  # [email]
-passwords = {}  # {user_id: password}
-connected_clients = []  # [user_id]
+#emails = []  # [email]
+#passwords = {}  # {user_id: password}
+#connected_clients = []  # [user_id]
 active_rooms = {}  # {user_id: [room_id]}
-offline_messages = {}  # {user_id: [{from_user_id: from_user_id, message: message}]}
-#rooms_and_keys = {}  # {room_id: key}
+# rooms_and_keys = {}  # {room_id: key}
 
 # Constants
 SYM_KEY_LENGTH = 32
 DIGEST_LENGTH = 64
-
-
-# Create a database for the users, chats, emails seperated, passwords seperated,
-# connected clients, active rooms, and offline messages
-# connect to the database
-conn = sqlite3.connect('database.db')
-
-# Create a cursor to execute SQL commands and queries
-cursor = conn.cursor()
-
-# Create a table for the users
-cursor.execute("CREATE TABLE users (user_id TEXT, email TEXT, password TEXT)")
-
-# Create a table for the chats
-cursor.execute("CREATE TABLE chats (room_id TEXT, from_user_id TEXT, message TEXT)")
-
-# Create a table for the emails
-cursor.execute("CREATE TABLE emails (email TEXT)")
-
-# Create a table for the passwords
-cursor.execute("CREATE TABLE passwords (user_id TEXT, password TEXT)")
-
-# Create a table for the connected clients
-cursor.execute("CREATE TABLE connected_clients (user_id TEXT)")
-
-# Create a table for the active rooms
-cursor.execute("CREATE TABLE active_rooms (user_id TEXT, room_id TEXT)")
-
-# Create a table for the offline messages
-cursor.execute("CREATE TABLE offline_messages (user_id TEXT, from_user_id TEXT, message TEXT)")
-
-# Create a table for the rooms and keys
-cursor.execute("CREATE TABLE rooms_and_keys (room_id TEXT, key TEXT)")
-
 
 # TODO Base Connection Routes
 @socketio.on('connection')
@@ -82,21 +47,17 @@ def handle_connection(user_id: str) -> None:
     """
 
     # Create a new room for the user and join it. The room name is passed as the user id
-    if user_id not in connected_clients and user_id != "":
+    if not database.get_connected_client(user_id) and user_id != "":
         join_room(user_id)
 
         # Add the user to the list of connected clients
-        connected_clients.append(user_id)
+        #connected_clients.append(user_id)
+
+        # Add the user to the database
+        database.add_connected_client(user_id)
 
     # Print the list of connected clients
-    print(connected_clients)
-
-    # # If the user has any pending messages, send them
-    # if user_id in offline_messages:
-    #     for message in offline_messages[user_id]:
-    #         emit('privateMessage', {'from_user_id': message['from_user_id'], 'message': message['message']},
-    #              room=user_id)
-    #     del offline_messages[user_id]
+    print("Connected clients", database.get_connected_clients())
 
 
 @socketio.on('getConnectedClients')
@@ -106,6 +67,7 @@ def handle_get_connected_clients() -> None:
     :return: None
     """
     # Emit the list of connected clients to the front end
+    connected_clients = database.get_connected_clients()
     emit('ConnectedClients', {'clients': connected_clients})
 
 
@@ -144,10 +106,13 @@ def handle_room_creation(data: dict) -> None:
         if variation1 == variation2 and variation1 not in active_rooms[client]:
             # Add the room to the list of active rooms for the client
             active_rooms[client].append(room_id)
-            # add the secret key for the room to the database
-            # -----------------rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
-            cursor.execute("INSERT INTO rooms_and_keys VALUES (?, ?)", (room_id, Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)))
-            conn.commit()
+            #rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+
+            # Add the key to the rooms_and_keys database
+            key = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+            print("Key", key)
+            database.add_room_and_key(room_id, key)
+
             chats[room_id] = []
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
@@ -156,51 +121,20 @@ def handle_room_creation(data: dict) -> None:
             # Add the room to the list of active rooms for the client and the other user
             active_rooms[client].append(room_id)
             active_rooms[user_id].append(room_id)
-            # ------------rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
-            # add the secret key for the room to the database
-            cursor.execute("INSERT INTO rooms_and_keys VALUES (?, ?)", (room_id, Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)))
+            #rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+
+            # Add the key to the rooms_and_keys database
+            key = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+            print("Key", key)
+            database.add_room_and_key(room_id, key)
 
             chats[room_id] = []
 
     # Print the list of active rooms for the user
     print(active_rooms)
 
-    # If the room has any pending messages, send them to the room
-    if room_id in offline_messages:
-        # Loop through the messages and send them to the room
-        for message in offline_messages[room_id]:
-            # SocketIO emits to the front end using the emit function. Passing the message data and the room id
-            emit('privateMessage', {'from_user_id': message['from_user_id'], 'message': message['message']},
-                 room=room_id)
-        # Remove the room from the list of offline messages
-        del offline_messages[room_id]
-
 
 # TODO Message Routes
-@socketio.on('privateMessage')
-def handle_private_message(data: dict) -> None:
-    """
-    Handles a private message sent from one user to another
-    :param data: The data passed from the front end, which contains the user id of the sender, the user id of the receiver, and the message
-    :return:
-    """
-    to_user_id = data['to_user_id']
-    from_user_id = data['from_user_id']
-    message = data['message']
-
-    # Check if the recipient is connected
-    if to_user_id in connected_clients:
-        # Emit to the front end using the emit function. Passing the sender, message, and room id
-        emit('privateMessage', {'from_user_id': from_user_id, 'message': message}, room=to_user_id)
-    else:
-        # Recipient is not connected
-        if to_user_id not in offline_messages:
-            # Create a new list of offline messages for the recipient
-            offline_messages[to_user_id] = []
-        # Add the message to the list of offline messages for the recipient
-        offline_messages[to_user_id].append({'from_user_id': from_user_id, 'message': message})
-
-
 @socketio.on('newMessage')
 def handle_new_message(data: dict) -> None:
     """
@@ -221,12 +155,11 @@ def handle_new_message(data: dict) -> None:
 
         # If the room id is in the list of chats, append the message to the list of messages
         if room_id in chats:
-            # gets the secret key for the room from the database
-            res = cursor.execute("SELECT key FROM rooms_and_keys WHERE room_id = ?", (room_id,))
-            res = res.fetchone()
+            #key = rooms_and_keys[room_id]
 
-            key = res
-            # -------------key = rooms_and_keys[room_id]
+            # Get the key from the database
+            key = database.get_room_and_key(room_id)
+            print("Key", key)
 
             # Encrypted message and sender and then append encrypted data to the list of messages
             hashed_message = hash_message(message)
@@ -242,12 +175,10 @@ def handle_new_message(data: dict) -> None:
 
         # If the alternate room id is in the list of chats, append the message to the list of messages
         elif alternate_room_id in chats:
-            # gets the secret key for the room
-            res = cursor.execute("SELECT key FROM rooms_and_keys WHERE room_id = ?", (room_id,))
-            res = res.fetchone()
-            key = res
+            #key = rooms_and_keys[alternate_room_id]
 
-            #---------------key = rooms_and_keys[alternate_room_id]
+            # Get the key from the database
+            key = database.get_room_and_key(alternate_room_id)
 
             # Encrypted message and sender and then append to the list of messages
             hashed_message = hash_message(message)
@@ -347,12 +278,10 @@ def decrypt_messages(room_id: str) -> list:
     # List of dictionaries
     messages = chats[room_id]
 
-    # gets the secret key for the room
-    res = cursor.execute("SELECT key FROM rooms_and_keys WHERE room_id = ?", (room_id,))
-    res = res.fetchone()
-    key = res
+    #key = rooms_and_keys[room_id]
 
-    #-----------------key = rooms_and_keys[room_id]
+    # Get the key from the database
+    key = database.get_room_and_key(room_id)
 
     # Return list of decrypted messages
     decrypted_messages = []
@@ -395,11 +324,12 @@ def authenticate_user(password: str, user_id: str) -> bool:
     :return: True if the user is authenticated, False otherwise
     """
 
+    # Get the user data from the database
+    user_data = database.get_user(user_id)
+
     # Check if the user exists in the database
-    if user_id in users:
-        # Check if the password matches
-        if users[user_id]['password'] == password:
-            return True
+    if user_data and user_data[2] == password:
+        return True
     return False
 
 
@@ -411,7 +341,6 @@ def handle_login(data: dict) -> None:
     :return: None
     """
     print("Data for login", data)
-    print(users)
     # Get the user id and password from the data
     user_id = data.get('userId')
     password = data.get('password')
@@ -439,14 +368,16 @@ def handle_register(data: dict) -> None:
     user_id = data.get('userId')
     password = data.get('password')
 
+    user_data = database.get_user(user_id)
+
     # Check if the email is already registered. If so, send the front end a failure message
-    if email in emails:
+    if database.email_exists(email):
         print("Email already registered")
         emit("register_response",
              {'success': False, 'message': 'An account already exists for this email'})  # TODO Too much info?
 
     # Check if the user id is already registered. If so, send the front end a failure message
-    elif user_id in users:
+    elif user_data:
         print("User already exists")
         emit("register_response",
              {'success': False, 'message': 'Username is already taken'})  # TODO Too much info?
@@ -454,20 +385,30 @@ def handle_register(data: dict) -> None:
         # Create a new user and add them to the database
 
         # Add the email to the list of emails
-        emails.append(email)
+        #emails.append(email)
+
+        # Add the email to the database
+        database.add_email(email)
+
         # Add the password for the user id to the list of passwords
         # TODO Salt and hash the password before adding it to the list of passwords
 
-        passwords[user_id] = password
+        #passwords[user_id] = password
+        # Add the password to the database
+        database.add_password(user_id, password)
+
         # Add the user to the database, user id holds the email and password
-        users[user_id] = {'email': email, 'password': password}
+        #users[user_id] = {'email': email, 'password': password}
+
+        # Add the user to the database with the email and password
+        database.add_user(user_id, email, password)
 
         # Send the front end a success message
         emit("register_response", {'success': True, 'message': 'Account created successfully'})
 
+    # Get all the emails from the database
+    emails = database.get_emails()
     print(emails)
-    print(passwords)
-    print(users)
 
 
 if __name__ == '__main__':
