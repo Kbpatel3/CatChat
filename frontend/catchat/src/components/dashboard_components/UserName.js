@@ -1,3 +1,8 @@
+/**
+ * React component that renders the user's username.
+ * @returns {Element} JSX - The user's username.
+ */
+
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import {eventEmitter} from "../../events/EventEmitter";

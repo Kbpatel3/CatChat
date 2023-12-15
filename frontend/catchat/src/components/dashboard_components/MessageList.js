@@ -1,7 +1,13 @@
+/**
+ * MessageList component that renders a list of messages between two users in a chat
+ * @author Kaushal Patel and Michael Imerman
+ * @version 1.0
+ * @return {Element} JSX - Returns the JSX element that renders the message list
+ */
+
 import React, { useEffect, useState } from "react";
 import { eventEmitter } from "../../events/EventEmitter";
 import io from "socket.io-client";
-import StreamCipher from "../../utils/StreamCipher";
 
 // Create a socket connection to the server
 const socket = io("http://localhost:5000");
@@ -51,18 +57,18 @@ function MessageList({ sender }) {
 
 
   /**
-  //    * Callback function that is called when the 'cardClicked' event is emitted
-  //    * @param userId The user id of the user that the logged-in user is chatting with
-  //    */
+      * Callback function that is called when the 'cardClicked' event is emitted
+      * @param userId The user id of the user that the logged-in user is chatting with
+      */
     const cardClickListener = (userId) => {
       // Call the handleCardClicked function
       handleCardClicked(userId);
     };
 
     /**
-  //    * Handle a card being clicked. This is a callback function that is called when the 'cardClick' event is emitted
-  //    * @param userId The user id of the user that the logged-in user is chatting with
-  //    */
+      * Handle a card being clicked. This is a callback function that is called when the 'cardClick' event is emitted
+      * @param userId The user id of the user that the logged-in user is chatting with
+      */
     const handleCardClicked = (userId) => {
       // Set the user id state to the input value
       setUserId(userId)
@@ -76,9 +82,9 @@ function MessageList({ sender }) {
     };
 
     /**
-  //    * Callback function that is called when the 'messageSent' event is emitted
-  //    * @param message The message that was sent
-  //    */
+      * Callback function that is called when the 'messageSent' event is emitted
+      * @param message The message that was sent
+      */
     const messageListener = (message) => {
         console.log("Message sent: " + message);
         console.log("To: " + userId);

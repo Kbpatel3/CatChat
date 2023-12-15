@@ -1,3 +1,7 @@
+/**
+ * This component renders the message box that is typed in at the bottom of the dashboard.
+ * @author Kaushal Patel and Michael Imerman
+ */
 import { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import { eventEmitter } from "../../events/EventEmitter";
@@ -25,7 +29,8 @@ function MessageBox({ sender }) {
   }
 
   /**
-   * This function is called when the user presses a key while the message box is in focus. We only care about the enter key.
+   * This function is called when the user presses a key while the message box is in focus. We only care
+   * about the enter key.
    * @param e The event object which contains the key that was pressed
    */
   const handleEnterKeyPress = (e) => {

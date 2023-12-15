@@ -1,4 +1,9 @@
-// client/src/Dashboard.js
+/**
+ * React component that renders the dashboard of the application.
+ * @author Michael Imerman and Kaushal Patel
+ * @version 1.0
+ * @return {Element} JSX - Returns the JSX element that renders the dashboard
+ */
 import React, { useState, useEffect } from 'react';
 import { useLocation } from "react-router-dom";
 import io from 'socket.io-client';

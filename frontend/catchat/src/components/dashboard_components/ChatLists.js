@@ -1,3 +1,10 @@
+/**
+ * This component renders a list of chat rooms on the left side of the dashboard.
+ * @author Michael Imerman and Kaushal Patel
+ * @version 1.0
+ * @return {Element} - Returns the JSX element that renders the chat rooms
+ */
+
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import ChatRoomCard from './ChatRoomCard';

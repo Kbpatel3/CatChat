@@ -1,3 +1,10 @@
+/**
+ * This file represents a single chat room card
+ * @author Michael Imerman and Kaushal Patel
+ * @version 1.0
+ * @return {Element} JSX - Returns the JSX element that renders the chat room card
+ */
+
 import React from 'react';
 import io from "socket.io-client";
 import { eventEmitter } from '../../events/EventEmitter'

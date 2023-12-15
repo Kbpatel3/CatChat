@@ -1,3 +1,9 @@
+/**
+ * React component for the registration page
+ * @author Michael Imerman and Kaushal Patel
+ * @version 1.0
+ * @return {Element} JSX - The registration page
+ */
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";

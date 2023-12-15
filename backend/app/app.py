@@ -1,11 +1,22 @@
-import base64
-
-from flask import Flask, request, jsonify
+####################################
+# Primary app file for the backend. It does various operations for the backend, including:
+#   - Creating a new room
+#   - Sending a message
+#   - Getting the message history
+#   - Authenticating a user
+#   - Registering a user
+#   - Encryption and decryption of messages, senders
+#   - Salting and hashing of passwords
+#   - verifying hashes of passwords
+#   - Checking if a password meets NIST requirements
+#   - Checking if a username is banned via bloom filter
+# @Author: Michael Imerman and Kaushal Patel
+# @Version: 1.0
+####################################
+from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
-from flask_socketio import join_room, leave_room, rooms
-from flask_login import login_user
-from flask import request, jsonify
+from flask_socketio import join_room
 from config import SECRET_KEY
 import stream_cipher
 import Crypto.Random
@@ -105,6 +116,7 @@ def handle_room_creation(data: dict) -> None:
         elif variation1 not in (client_active_room or []) and variation1 not in (
                 user_active_room or []) and variation2 not in (client_active_room or []) and variation2 not in (
                 user_active_room or []):
+
             # Add the room id to the active rooms table in the database
             database.add_active_room(client, room_id)
             database.add_active_room(user_id, room_id)
@@ -153,9 +165,12 @@ def handle_new_message(data: dict) -> None:
         hashed_message = hash_message(message)
         hashed_sender = hash_message(sender)
 
-        combined_message = combine_message_and_hash(message, hashed_message)
-        combined_sender = combine_message_and_hash(sender, hashed_sender)
+        # Combines the hash and the message
+        combined_message = combine_data_and_hash(message, hashed_message)
+        # Combines the hash and the sender
+        combined_sender = combine_data_and_hash(sender, hashed_sender)
 
+        # Encrypt the message and sender
         encrypted_message = encrypt(combined_message, key)
         encrypted_sender = encrypt(combined_sender, key)
 
@@ -195,7 +210,7 @@ def hash_message(data: str) -> str:
     return hashed_data
 
 
-def combine_message_and_hash(data: str, hashed_data) -> str:
+def combine_data_and_hash(data: str, hashed_data) -> str:
     """
     Hashes the data using SHA256
     :param data: The data to be hashed
@@ -243,6 +258,11 @@ def handle_get_message_history(data: dict) -> None:
 
 
 def decrypt_messages(room_id: str) -> list:
+    """
+    Decrypts the messages in the room
+    :param room_id: The room id of the room to decrypt the messages for
+    :return decrypted_messages: The list of decrypted messages
+    """
     # Get the messages from the database for the room
     messages = database.get_chat(room_id)
 
@@ -409,19 +429,11 @@ def handle_register(data: dict) -> None:
         emit("register_response",
              {'success': False, 'message': 'Username is banned, please choose another'})
 
-    # elif not meets_nist_requirements(password):
-    #     print("Password does not meet NIST requirements")
-    #     emit("register_response",
-    #          {'success': False,
-    #           'message': 'Password does not meet NIST requirements. Password must be at least 8 characters long and contain a number, uppercase letter, lowercase letter, and special character'})
     else:
         # Create a new user and add them to the database
 
         # Add the email to the database
         database.add_email(email)
-
-        # Add the password for the user id to the list of passwords
-        # TODO Salt and hash the password before adding it to the list of passwords
 
         # Salt and hash the password
         hashed_password = hash_password(password)

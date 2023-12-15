@@ -1,4 +1,9 @@
-// src/components/Auth/Login.js
+/**
+ * React component for the login page
+ * @author Michael Imerman and Kaushal Patel
+ * @version 1.0
+ * @return {Element} JSX - The login page
+ */
 
 import React from "react";
 import { useState } from "react";
