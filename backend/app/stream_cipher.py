@@ -1,12 +1,17 @@
-import Crypto
-from Crypto.Random import get_random_bytes
+######################################
+# CS466 Project 3: Secure Communication
+# Authors: Kaushal Patel and Zach Eanes
+#
+# Description:
+#   This file that performs the encryption and decryption of a message using
+#   a stream cipher done for bytes.
+######################################
 
 
 class StreamCipher:
     """
     This class is used to encrypt and decrypt messages using a stream cipher.
     """
-
     def __init__(self, key):
         """
         This function is the constructor for the StreamCipher class.
@@ -66,44 +71,3 @@ class StreamCipher:
 
         # return the plaintext in bytes
         return bytes(plaintext)
-
-    def encrypt_string(self, plaintext):
-        """
-        Encrypts a string and returns the ciphertext in byte representation.
-        Args:
-            plaintext: the string to be encrypted
-        Returns:
-            the ciphertext in byte representation
-        """
-        plaintext_bytes = plaintext.encode('utf-8')  # Convert string to bytes
-        return self.encrypt(plaintext_bytes)
-
-    def decrypt_string(self, ciphertext):
-        """
-        Decrypts the given ciphertext and returns the plaintext as a string.
-        Args:
-            ciphertext: the ciphertext in byte representation to be decrypted
-        Returns:
-            the decrypted plaintext as a string
-        """
-        plaintext_bytes = self.decrypt(ciphertext)
-        return plaintext_bytes.decode('utf-8')  # Convert bytes back to string
-
-
-def test():
-    key = Crypto.Random.get_random_bytes(32)
-    cipher = StreamCipher(key)
-
-    # Original message as a string
-    message = "Hello, world!"
-    encrypted_message = cipher.encrypt_string(message)
-    decrypted_message = cipher.decrypt_string(encrypted_message)
-
-    # Test output
-    print("Original message:", message)
-    print("Encrypted message:", encrypted_message)
-    print("Decrypted message:", decrypted_message)
-
-
-if __name__ == "__main__":
-    test()

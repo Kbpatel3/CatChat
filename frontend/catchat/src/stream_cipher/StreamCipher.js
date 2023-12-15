@@ -34,17 +34,4 @@ class StreamCipher {
     }
 }
 
-function test() {
-    const key = "kdslfjlksjf";
-    const cipher = new StreamCipher(key);
-
-    const message = "Hello, world!";
-    const encryptedMessage = cipher.encrypt(message);
-    const decryptedMessage = cipher.decrypt(encryptedMessage);
-
-    console.log("Original message:", message);
-    console.log("Encrypted message:", encryptedMessage);
-    console.log("Decrypted message:", decryptedMessage);
-}
-
-test();
+export default StreamCipher;

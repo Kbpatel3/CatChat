@@ -1,3 +1,5 @@
+import base64
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
@@ -7,7 +9,7 @@ from flask import request, jsonify
 from config import SECRET_KEY
 import sqlite3
 import stream_cipher
-import crypto
+import Crypto.Random
 
 # Initialize Flask
 app = Flask(__name__)
@@ -24,13 +26,15 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Sample database
 users = {}  # {user_id: {email: email, password: password}}
 chats = {}  # {room_id: [{from_user_id: from_user_id, message: message}]}
-emails = [] # [email]
+emails = []  # [email]
 passwords = {}  # {user_id: password}
 connected_clients = []  # [user_id]
-active_rooms = {}   # {user_id: [room_id]}
-offline_messages = {}   # {user_id: [{from_user_id: from_user_id, message: message}]}
-rooms_and_keys = {} # {room_id: key}
+active_rooms = {}  # {user_id: [room_id]}
+offline_messages = {}  # {user_id: [{from_user_id: from_user_id, message: message}]}
+rooms_and_keys = {}  # {room_id: key}
 
+# Constants
+SYM_KEY_LENGTH = 32
 
 
 # Create a database for the users, chats, emails seperated, passwords seperated,
@@ -61,7 +65,6 @@ rooms_and_keys = {} # {room_id: key}
 #
 # # Create a table for the offline messages
 # cursor.execute("CREATE TABLE offline_messages (user_id TEXT, from_user_id TEXT, message TEXT)")
-
 
 
 # TODO Base Connection Routes
@@ -138,7 +141,7 @@ def handle_room_creation(data: dict) -> None:
         if variation1 == variation2 and variation1 not in active_rooms[client]:
             # Add the room to the list of active rooms for the client
             active_rooms[client].append(room_id)
-            rooms_and_keys[room_id] = crypto.random.get_random_bytes(32)
+            rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
             chats[room_id] = []
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
@@ -147,7 +150,7 @@ def handle_room_creation(data: dict) -> None:
             # Add the room to the list of active rooms for the client and the other user
             active_rooms[client].append(room_id)
             active_rooms[user_id].append(room_id)
-            rooms_and_keys[room_id] = crypto.random.get_random_bytes(32)
+            rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
             chats[room_id] = []
 
     # Print the list of active rooms for the user
@@ -212,33 +215,53 @@ def handle_new_message(data: dict) -> None:
         alternate_room_id = receiver + "." + sender
         print("Appending onto the message history", room_id)
 
-        # gets the secret key for the room
-        key = rooms_and_keys[room_id]
-
         # If the room id is in the list of chats, append the message to the list of messages
         if room_id in chats:
+            # gets the secret key for the room
+            key = rooms_and_keys[room_id]
+
             # Encrypted message and sender and then append encrypted data to the list of messages
-            message_and_sender = encrypt_message(message, sender, key)
-            encrypted_message = message_and_sender.split(".")[0]
-            encrypted_sender = message_and_sender.split(".")[1]
+            encrypted_message = encrypt(message, key)
+            encrypted_sender = encrypt(sender, key)
+
             print("Encrypted message is:", encrypted_message)
+            print("Encrypted sender is:", encrypted_sender)
             chats[room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
 
         # If the alternate room id is in the list of chats, append the message to the list of messages
         elif alternate_room_id in chats:
+            # gets the secret key for the room
+            key = rooms_and_keys[alternate_room_id]
+
             # Encrypted message and sender and then append to the list of messages
-            message_and_sender = encrypt_message(message, sender, key)
-            encrypted_message = message_and_sender.split(".")[0]
-            encrypted_sender = message_and_sender.split(".")[1]
+            encrypted_message = encrypt(message, key)
+            encrypted_sender = encrypt(sender, key)
+
             print("Encrypted message is:", encrypted_message)
+            print("Encrypted sender is:", encrypted_sender)
             chats[alternate_room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
 
 
-def encrypt_message(message: str, sender: str, key: str) -> str:
+def encrypt(data: str, key: bytes) -> bytes:
+    """
+    Encrypts the data using the key
+    :param data: The data to be encrypted
+    :param key: The key used to encrypt the data
+    :return: The encrypted data
+    """
     cipher = stream_cipher.StreamCipher(key)
-    encrypted_message = cipher.encrypt_string(message)
-    encrypted_sender = cipher.encrypt_string(sender)
-    return encrypted_message + "." + encrypted_sender
+    return cipher.encrypt(data.encode())
+
+
+def decrypt(data: bytes, key: bytes) -> str:
+    """
+    Decrypts the data using the key
+    :param data: The data to be decrypted
+    :param key: The key used to decrypt the data
+    :return: The decrypted data
+    """
+    cipher = stream_cipher.StreamCipher(key)
+    return cipher.decrypt(data)
 
 
 @socketio.on('getMessageHistory')
@@ -257,15 +280,40 @@ def handle_get_message_history(data: dict) -> None:
         room_id = sender + "." + receiver
         # The alternate room id is the concatenation of the receiver and sender
         alternate_room_id = receiver + "." + sender
-        print("Getting message history for room", room_id)
 
         # If the room id is in the list of chats, emit the message history to the front end
         if room_id in chats:
-            emit('messageHistory', {'messages': chats[room_id], 'room_key': rooms_and_keys[room_id]})
+            decrypted_messages = decrypt_messages(room_id)
+            emit('messageHistory', {'messages': decrypted_messages})
 
         # If the alternate room id is in the list of chats, emit the message history to the front end
         elif alternate_room_id in chats:
-            emit('messageHistory', {'messages': chats[alternate_room_id], 'room_key': rooms_and_keys[alternate_room_id]})
+            decrypted_messages = decrypt_messages(alternate_room_id)
+            emit('messageHistory', {'messages': decrypted_messages})
+
+
+def decrypt_messages(room_id: str) -> list:
+    # List of dictionaries
+    messages = chats[room_id]
+
+    # gets the secret key for the room
+    key = rooms_and_keys[room_id]
+
+    # Return list of decrypted messages
+    decrypted_messages = []
+
+    for message in messages:
+        # Decrypt the message and sender
+        decrypted_message = decrypt(message['message'], key)
+        decrypted_sender = decrypt(message['from_user_id'], key)
+
+        print("Decrypted message is:", decrypted_message)
+        print("Decrypted sender is:", decrypted_sender)
+
+        decrypted_messages.append(
+            {'from_user_id': decrypted_sender.decode(), 'message': decrypted_message.decode()})
+
+    return decrypted_messages
 
 
 # TODO User Authentication Routes

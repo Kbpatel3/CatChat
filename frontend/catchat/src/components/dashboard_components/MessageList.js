@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { eventEmitter } from "../../events/EventEmitter";
 import io from "socket.io-client";
-import stream_cipher from "../../stream_cipher/StreamCipher.js";
+import StreamCipher from "../../stream_cipher/StreamCipher";
 
 // Create a socket connection to the server
 const socket = io("http://localhost:5000");
@@ -106,18 +106,6 @@ function MessageList({ sender }) {
     // Listen to the socket for the message history
     socket.on("messageHistory", (data) => {
       // Set the message state to the input value
-        // Loop over data.messages and decrypt each message, sender, and receiver
-        const room_key = data.room_key;
-        for (let i = 0; i < data.messages.length; i++) {
-            // gets the encrypted message
-            let message = data.messages[i].message;
-            // gets the encrypted sender
-            let sender = data.messages[i].from_user_id;
-
-            // decrypt the message and sender and add them back to the messages array
-            data.messages[i].message = decrypt(message, room_key);
-            data.messages[i].from_user_id = decrypt(sender, room_key);
-        }
       setMessages(data.messages);
     });
   };
