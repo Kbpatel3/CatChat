@@ -24,7 +24,7 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# Sample database
+#Sample database
 users = {}  # {user_id: {email: email, password: password}}
 chats = {}  # {room_id: [{from_user_id: from_user_id, message: message}]}
 emails = []  # [email]
@@ -32,7 +32,7 @@ passwords = {}  # {user_id: password}
 connected_clients = []  # [user_id]
 active_rooms = {}  # {user_id: [room_id]}
 offline_messages = {}  # {user_id: [{from_user_id: from_user_id, message: message}]}
-rooms_and_keys = {}  # {room_id: key}
+#rooms_and_keys = {}  # {room_id: key}
 
 # Constants
 SYM_KEY_LENGTH = 32
@@ -42,31 +42,34 @@ DIGEST_LENGTH = 64
 # Create a database for the users, chats, emails seperated, passwords seperated,
 # connected clients, active rooms, and offline messages
 # connect to the database
-# conn = sqlite3.connect('database.db')
-#
-# # Create a cursor to execute SQL commands and queries
-# cursor = conn.cursor()
-#
-# # Create a table for the users
-# cursor.execute("CREATE TABLE users (user_id TEXT, email TEXT, password TEXT)")
-#
-# # Create a table for the chats
-# cursor.execute("CREATE TABLE chats (room_id TEXT, from_user_id TEXT, message TEXT)")
-#
-# # Create a table for the emails
-# cursor.execute("CREATE TABLE emails (email TEXT)")
-#
-# # Create a table for the passwords
-# cursor.execute("CREATE TABLE passwords (user_id TEXT, password TEXT)")
-#
-# # Create a table for the connected clients
-# cursor.execute("CREATE TABLE connected_clients (user_id TEXT)")
-#
-# # Create a table for the active rooms
-# cursor.execute("CREATE TABLE active_rooms (user_id TEXT, room_id TEXT)")
-#
-# # Create a table for the offline messages
-# cursor.execute("CREATE TABLE offline_messages (user_id TEXT, from_user_id TEXT, message TEXT)")
+conn = sqlite3.connect('database.db')
+
+# Create a cursor to execute SQL commands and queries
+cursor = conn.cursor()
+
+# Create a table for the users
+cursor.execute("CREATE TABLE users (user_id TEXT, email TEXT, password TEXT)")
+
+# Create a table for the chats
+cursor.execute("CREATE TABLE chats (room_id TEXT, from_user_id TEXT, message TEXT)")
+
+# Create a table for the emails
+cursor.execute("CREATE TABLE emails (email TEXT)")
+
+# Create a table for the passwords
+cursor.execute("CREATE TABLE passwords (user_id TEXT, password TEXT)")
+
+# Create a table for the connected clients
+cursor.execute("CREATE TABLE connected_clients (user_id TEXT)")
+
+# Create a table for the active rooms
+cursor.execute("CREATE TABLE active_rooms (user_id TEXT, room_id TEXT)")
+
+# Create a table for the offline messages
+cursor.execute("CREATE TABLE offline_messages (user_id TEXT, from_user_id TEXT, message TEXT)")
+
+# Create a table for the rooms and keys
+cursor.execute("CREATE TABLE rooms_and_keys (room_id TEXT, key TEXT)")
 
 
 # TODO Base Connection Routes
@@ -141,7 +144,10 @@ def handle_room_creation(data: dict) -> None:
         if variation1 == variation2 and variation1 not in active_rooms[client]:
             # Add the room to the list of active rooms for the client
             active_rooms[client].append(room_id)
-            rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+            # add the secret key for the room to the database
+            # -----------------rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+            cursor.execute("INSERT INTO rooms_and_keys VALUES (?, ?)", (room_id, Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)))
+            conn.commit()
             chats[room_id] = []
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
@@ -150,7 +156,10 @@ def handle_room_creation(data: dict) -> None:
             # Add the room to the list of active rooms for the client and the other user
             active_rooms[client].append(room_id)
             active_rooms[user_id].append(room_id)
-            rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+            # ------------rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
+            # add the secret key for the room to the database
+            cursor.execute("INSERT INTO rooms_and_keys VALUES (?, ?)", (room_id, Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)))
+
             chats[room_id] = []
 
     # Print the list of active rooms for the user
@@ -212,8 +221,12 @@ def handle_new_message(data: dict) -> None:
 
         # If the room id is in the list of chats, append the message to the list of messages
         if room_id in chats:
-            # gets the secret key for the room
-            key = rooms_and_keys[room_id]
+            # gets the secret key for the room from the database
+            res = cursor.execute("SELECT key FROM rooms_and_keys WHERE room_id = ?", (room_id,))
+            res = res.fetchone()
+
+            key = res
+            # -------------key = rooms_and_keys[room_id]
 
             # Encrypted message and sender and then append encrypted data to the list of messages
             hashed_message = hash_message(message)
@@ -230,7 +243,11 @@ def handle_new_message(data: dict) -> None:
         # If the alternate room id is in the list of chats, append the message to the list of messages
         elif alternate_room_id in chats:
             # gets the secret key for the room
-            key = rooms_and_keys[alternate_room_id]
+            res = cursor.execute("SELECT key FROM rooms_and_keys WHERE room_id = ?", (room_id,))
+            res = res.fetchone()
+            key = res
+
+            #---------------key = rooms_and_keys[alternate_room_id]
 
             # Encrypted message and sender and then append to the list of messages
             hashed_message = hash_message(message)
@@ -331,7 +348,11 @@ def decrypt_messages(room_id: str) -> list:
     messages = chats[room_id]
 
     # gets the secret key for the room
-    key = rooms_and_keys[room_id]
+    res = cursor.execute("SELECT key FROM rooms_and_keys WHERE room_id = ?", (room_id,))
+    res = res.fetchone()
+    key = res
+
+    #-----------------key = rooms_and_keys[room_id]
 
     # Return list of decrypted messages
     decrypted_messages = []
