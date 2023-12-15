@@ -28,6 +28,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Constants
 SYM_KEY_LENGTH = 32
 DIGEST_LENGTH = 64
+MIN_PASSWORD_LENGTH = 8
+
 
 # TODO Base Connection Routes
 @socketio.on('connection')
@@ -83,7 +85,6 @@ def handle_room_creation(data: dict) -> None:
         variation1 = receiver + "." + requester
         variation2 = requester + "." + receiver
 
-
         # Get the active room for the client
         client_active_room = database.get_active_room(client)
         user_active_room = database.get_active_room(user_id)
@@ -100,7 +101,9 @@ def handle_room_creation(data: dict) -> None:
 
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
-        elif variation1 not in (client_active_room or []) and variation1 not in (user_active_room or []) and variation2 not in (client_active_room or []) and variation2 not in (user_active_room or []):
+        elif variation1 not in (client_active_room or []) and variation1 not in (
+                user_active_room or []) and variation2 not in (client_active_room or []) and variation2 not in (
+                user_active_room or []):
             # Add the room id to the active rooms table in the database
             database.add_active_room(client, room_id)
             database.add_active_room(user_id, room_id)
@@ -157,6 +160,7 @@ def handle_new_message(data: dict) -> None:
 
         # Add the encrypted message to the database
         database.add_chat(final_room_id, encrypted_sender, encrypted_message)
+
 
 def encrypt(data: str, key: bytes) -> bytes:
     """
@@ -236,6 +240,7 @@ def handle_get_message_history(data: dict) -> None:
             decrypted_messages = decrypt_messages(alternate_room_id)
             emit('messageHistory', {'messages': decrypted_messages})
 
+
 def decrypt_messages(room_id: str) -> list:
     # Get the messages from the database for the room
     messages = database.get_chat(room_id)
@@ -252,7 +257,8 @@ def decrypt_messages(room_id: str) -> list:
         decrypted_sender = decrypt(message[1], key)
 
         # Split the decrypted parts into the data and hash
-        extracted_message, extracted_message_hash = decrypted_message[:-DIGEST_LENGTH], decrypted_message[-DIGEST_LENGTH:]
+        extracted_message, extracted_message_hash = decrypted_message[:-DIGEST_LENGTH], decrypted_message[
+                                                                                        -DIGEST_LENGTH:]
 
         # Split the decrypted parts into the data and hash
         extracted_sender, extracted_sender_hash = decrypted_sender[:-DIGEST_LENGTH], decrypted_sender[-DIGEST_LENGTH:]
@@ -270,7 +276,7 @@ def decrypt_messages(room_id: str) -> list:
             decrypted_messages.append({'from_user_id': "Admin", 'message': "Message integrity compromised"})
         else:
             decrypted_messages.append(
-            {'from_user_id': extracted_sender.decode(), 'message': extracted_message.decode()})
+                {'from_user_id': extracted_sender.decode(), 'message': extracted_message.decode()})
 
     return decrypted_messages
 
@@ -289,6 +295,48 @@ def authenticate_user(password: str, user_id: str) -> bool:
 
     # Check if the user exists in the database
     if user_data and user_data[2] == password:
+        return True
+    return False
+
+
+def meets_nist_requirements(password: str) -> bool:
+    """
+    Checks if the password meets either NIST requirements.
+        1) Password must be at least 16 characters long
+        2) Password must contain at least 8 characters that include a number, uppercase letter, lowercase letter, and special character
+
+        We are using the second requirement.
+    :param password: The password to be checked
+    :return: True if the password meets the NIST requirements, False otherwise
+    """
+
+    # Check if the password is at least 16 characters long
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return False
+
+    # Check if the password contains a number, uppercase letter, lowercase letter, and special character
+    has_number = False
+    has_uppercase = False
+    has_lowercase = False
+    has_special_character = False
+
+    # Loop through each character in the password
+    for character in password:
+        # Check if the character is a number
+        if character.isdigit():
+            has_number = True
+        # Check if the character is an uppercase letter
+        elif character.isupper():
+            has_uppercase = True
+        # Check if the character is a lowercase letter
+        elif character.islower():
+            has_lowercase = True
+        # Check if the character is a special character
+        else:
+            has_special_character = True
+
+    # Check if the password meets the NIST requirements
+    if has_number and has_uppercase and has_lowercase and has_special_character:
         return True
     return False
 
@@ -348,6 +396,12 @@ def handle_register(data: dict) -> None:
         print("Username is banned")
         emit("register_response",
              {'success': False, 'message': 'Username is banned, please choose another'})
+
+    elif not meets_nist_requirements(password):
+        print("Password does not meet NIST requirements")
+        emit("register_response",
+             {'success': False,
+              'message': 'Password does not meet NIST requirements. Password must be at least 8 characters long and contain a number, uppercase letter, lowercase letter, and special character'})
     else:
         # Create a new user and add them to the database
 

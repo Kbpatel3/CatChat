@@ -96,12 +96,12 @@ const Register = () => {
         <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
           <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-                Create and account
+              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white text-center">
+                Create an account
               </h1>
               <form className="space-y-4 md:space-y-6" action="#">
               {errorMessage && (
-                  <div className="bg-red-500 text-white p-3 mb-4 rounded-md">
+                  <div className="bg-red-500 text-white p-3 mb-4 rounded-md text-center">
                     {errorMessage}
                   </div>
                 )}
@@ -125,7 +125,7 @@ const Register = () => {
                   <label
                     htmlFor="userId"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                    Your Username
+                    Your username
                   </label>
                   <input
                     type="text"
