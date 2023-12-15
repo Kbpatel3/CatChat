@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { eventEmitter } from "../../events/EventEmitter";
 import io from "socket.io-client";
-import StreamCipher from "../../stream_cipher/StreamCipher";
+import StreamCipher from "../../utils/StreamCipher";
 
 // Create a socket connection to the server
 const socket = io("http://localhost:5000");
