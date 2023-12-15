@@ -136,6 +136,34 @@ def get_chat(room_id):
     conn.close()
     return chat
 
+def get_active_rooms():
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM active_rooms')
+    active_rooms = cursor.fetchall()
+    conn.close()
+    return active_rooms
+
+def room_exists(room_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    # Use COUNT to check if the room exists and how many times
+    cursor.execute('SELECT COUNT(*) FROM chats WHERE room_id = ?', (room_id,))
+    # Fetch the count
+    count = cursor.fetchone()[0]
+    conn.close()
+    # Return True if count is more than 0 (room exists), else False
+    return count > 0
+
+def is_room_active(room_id):
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM active_rooms WHERE room_id = ?', (room_id,))
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count > 0
+
+
 
 def email_exists(email):
     conn = connect_db()
@@ -148,6 +176,7 @@ def email_exists(email):
     # Return True if count is more than 0 (email exists), else False
     return count > 0
 
+
 def get_emails():
     conn = connect_db()
     cursor = conn.cursor()
@@ -157,7 +186,6 @@ def get_emails():
     emails = [email[0] for email in emails]
     conn.close()
     return emails
-
 
 
 def get_password(user_id):
@@ -177,6 +205,7 @@ def get_connected_client(user_id):
     conn.close()
     return connected_client
 
+
 def get_connected_clients():
     conn = connect_db()
     cursor = conn.cursor()
@@ -186,6 +215,7 @@ def get_connected_clients():
     connected_clients = [connected_client[0] for connected_client in connected_clients]
     conn.close()
     return connected_clients
+
 
 def get_active_room(user_id):
     conn = connect_db()

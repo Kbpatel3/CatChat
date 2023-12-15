@@ -26,11 +26,11 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 #Sample database
 #users = {}  # {user_id: {email: email, password: password}}
-chats = {}  # {room_id: [{from_user_id: from_user_id, message: message}]}
+#chats = {}  # {room_id: [{from_user_id: from_user_id, message: message}]}
 #emails = []  # [email]
 #passwords = {}  # {user_id: password}
 #connected_clients = []  # [user_id]
-active_rooms = {}  # {user_id: [room_id]}
+#active_rooms = {}  # {user_id: [room_id]}
 # rooms_and_keys = {}  # {room_id: key}
 
 # Constants
@@ -85,27 +85,28 @@ def handle_room_creation(data: dict) -> None:
     user_id = data.get('userId')
 
     # If the room does not exist, create it and join it
-    if room_id not in active_rooms.values():
+    if not database.room_exists(room_id):
         # Join the room
         join_room(room_id)
-
-        # Add client 1 to the list of active rooms
-        if client not in active_rooms:
-            active_rooms[client] = []
-
-        # Add client 2 to the list of active rooms
-        if user_id not in active_rooms:
-            active_rooms[user_id] = []
 
         # The room id is the concatenation of the two user ids
         requester, receiver = room_id.split(".")
         variation1 = receiver + "." + requester
         variation2 = requester + "." + receiver
 
+
+        # Get the active room for the client
+        client_active_room = database.get_active_room(client)
+        user_active_room = database.get_active_room(user_id)
+
         # If the room id is the same as the variation, then that means the user is trying to create a room with themselves
-        if variation1 == variation2 and variation1 not in active_rooms[client]:
+        if variation1 == variation2 and (client_active_room is None or room_id not in client_active_room):
             # Add the room to the list of active rooms for the client
-            active_rooms[client].append(room_id)
+            #active_rooms[client].append(room_id)
+
+            # Add the room id to the active rooms table in the database
+            database.add_active_room(client, room_id)
+
             #rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
 
             # Add the key to the rooms_and_keys database
@@ -113,14 +114,18 @@ def handle_room_creation(data: dict) -> None:
             print("Key", key)
             database.add_room_and_key(room_id, key)
 
-            chats[room_id] = []
+            #chats[room_id] = []
 
         # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
-        elif variation1 not in active_rooms[client] and variation1 not in active_rooms[user_id] and variation2 not in \
-                active_rooms[client] and variation2 not in active_rooms[user_id]:
+        elif variation1 not in (client_active_room or []) and variation1 not in (user_active_room or []) and variation2 not in (client_active_room or []) and variation2 not in (user_active_room or []):
             # Add the room to the list of active rooms for the client and the other user
-            active_rooms[client].append(room_id)
-            active_rooms[user_id].append(room_id)
+            #active_rooms[client].append(room_id)
+            #active_rooms[user_id].append(room_id)
+
+            # Add the room id to the active rooms table in the database
+            database.add_active_room(client, room_id)
+            database.add_active_room(user_id, room_id)
+
             #rooms_and_keys[room_id] = Crypto.Random.get_random_bytes(SYM_KEY_LENGTH)
 
             # Add the key to the rooms_and_keys database
@@ -128,10 +133,10 @@ def handle_room_creation(data: dict) -> None:
             print("Key", key)
             database.add_room_and_key(room_id, key)
 
-            chats[room_id] = []
+            #chats[room_id] = []
 
     # Print the list of active rooms for the user
-    print(active_rooms)
+    print(database.get_active_rooms())
 
 
 # TODO Message Routes
@@ -153,45 +158,30 @@ def handle_new_message(data: dict) -> None:
         # The alternate room id is the concatenation of the receiver and sender
         alternate_room_id = receiver + "." + sender
 
-        # If the room id is in the list of chats, append the message to the list of messages
-        if room_id in chats:
-            #key = rooms_and_keys[room_id]
+        # Decide on which room_id to use based on database records
+        if database.room_exists(room_id):
+            final_room_id = room_id
+        elif database.room_exists(alternate_room_id):
+            final_room_id = alternate_room_id
+        else:
+            # If neither room exists, create a new room with the room_id
+            final_room_id = room_id
 
-            # Get the key from the database
-            key = database.get_room_and_key(room_id)
-            print("Key", key)
+        # Get the key from the database
+        key = database.get_room_and_key(final_room_id)
 
-            # Encrypted message and sender and then append encrypted data to the list of messages
-            hashed_message = hash_message(message)
-            hashed_sender = hash_message(sender)
+        # Encrypted message and sender and then append encrypted data to the list of messages
+        hashed_message = hash_message(message)
+        hashed_sender = hash_message(sender)
 
-            combined_message = combine_message_and_hash(message, hashed_message)
-            combined_sender = combine_message_and_hash(sender, hashed_sender)
+        combined_message = combine_message_and_hash(message, hashed_message)
+        combined_sender = combine_message_and_hash(sender, hashed_sender)
 
-            encrypted_message = encrypt(combined_message, key)
-            encrypted_sender = encrypt(combined_sender, key)
+        encrypted_message = encrypt(combined_message, key)
+        encrypted_sender = encrypt(combined_sender, key)
 
-            chats[room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
-
-        # If the alternate room id is in the list of chats, append the message to the list of messages
-        elif alternate_room_id in chats:
-            #key = rooms_and_keys[alternate_room_id]
-
-            # Get the key from the database
-            key = database.get_room_and_key(alternate_room_id)
-
-            # Encrypted message and sender and then append to the list of messages
-            hashed_message = hash_message(message)
-            hashed_sender = hash_message(sender)
-
-            combined_message = combine_message_and_hash(message, hashed_message)
-            combined_sender = combine_message_and_hash(sender, hashed_sender)
-
-            encrypted_message = encrypt(combined_message, key)
-            encrypted_sender = encrypt(combined_sender, key)
-
-            chats[alternate_room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
-
+        # Add the encrypted message to the database
+        database.add_chat(final_room_id, encrypted_sender, encrypted_message)
 
 def encrypt(data: str, key: bytes) -> bytes:
     """
@@ -263,20 +253,22 @@ def handle_get_message_history(data: dict) -> None:
         # The alternate room id is the concatenation of the receiver and sender
         alternate_room_id = receiver + "." + sender
 
-        # If the room id is in the list of chats, emit the message history to the front end
-        if room_id in chats:
+        # Check which room_id to use based on database records
+        if database.room_exists(room_id):
             decrypted_messages = decrypt_messages(room_id)
             emit('messageHistory', {'messages': decrypted_messages})
-
-        # If the alternate room id is in the list of chats, emit the message history to the front end
-        elif alternate_room_id in chats:
+        elif database.room_exists(alternate_room_id):
             decrypted_messages = decrypt_messages(alternate_room_id)
             emit('messageHistory', {'messages': decrypted_messages})
 
-
 def decrypt_messages(room_id: str) -> list:
     # List of dictionaries
-    messages = chats[room_id]
+    #messages = chats[room_id]
+
+    # Get the messages from the database for the room
+    messages = database.get_chat(room_id)
+
+    #[{'from_user_id': HASH in b'' form, 'message': ENCRYPTED MESSAGE in b'' form}]
 
     #key = rooms_and_keys[room_id]
 
@@ -288,8 +280,8 @@ def decrypt_messages(room_id: str) -> list:
 
     for message in messages:
         # Decrypt the message and sender
-        decrypted_message = decrypt(message['message'], key)
-        decrypted_sender = decrypt(message['from_user_id'], key)
+        decrypted_message = decrypt(message[2], key)
+        decrypted_sender = decrypt(message[1], key)
 
         # Split the decrypted parts into the data and hash
         extracted_message, extracted_message_hash = decrypted_message[:-DIGEST_LENGTH], decrypted_message[-DIGEST_LENGTH:]
