@@ -353,6 +353,19 @@ def get_room_and_key(room_id):
     return room_and_key
 
 
+def get_passwords():
+    """
+    This function gets all the passwords from the database.
+    :return passwords: A list of all the passwords
+    """
+    conn = connect_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM passwords')
+    passwords = cursor.fetchall()
+    conn.close()
+    return passwords
+
+
 def drop_all_tables():
     """
     This function drops all the tables in the database.
@@ -376,5 +389,5 @@ def drop_all_tables():
 
 
 # Drop all tables and recreate them
-drop_all_tables()
+#drop_all_tables()
 create_tables()

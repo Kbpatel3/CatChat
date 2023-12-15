@@ -47,7 +47,7 @@ MIN_PASSWORD_LENGTH = 8
 @socketio.on('connection')
 def handle_connection(user_id: str) -> None:
     """
-    Handles the connection of a user to the server. Will create a new room for the user and join it.
+    Handles the connection of a user to the server. Will create a new room for the user and join it
     :param user_id: The user id of the user connecting to the server
     :return: None
     """
@@ -79,7 +79,8 @@ def handle_get_connected_clients() -> None:
 def handle_room_creation(data: dict) -> None:
     """
     Handles the creation of a new room for a user
-    :param data: The data passed from the client, which contains the client, the room name, and the user id
+    :param data: The data passed from the client, which contains the client, the room name,
+    and the user id
     :return: None
     """
     # Get the client, room name, and user id from the data
@@ -101,8 +102,10 @@ def handle_room_creation(data: dict) -> None:
         client_active_room = database.get_active_room(client)
         user_active_room = database.get_active_room(user_id)
 
-        # If the room id is the same as the variation, then that means the user is trying to create a room with themselves
-        if variation1 == variation2 and (client_active_room is None or room_id not in client_active_room):
+        # If the room id is the same as the variation, then that means the user is trying to
+        # create a room with themselves
+        if variation1 == variation2 and (client_active_room is None or room_id not in
+                                         client_active_room):
             # Add the room id to the active rooms table in the database
             database.add_active_room(client, room_id)
 
@@ -112,10 +115,12 @@ def handle_room_creation(data: dict) -> None:
             database.add_room_and_key(room_id, key)
 
 
-        # If the room id is not the same as the variation, then that means the user is trying to create a room with another user
-        elif variation1 not in (client_active_room or []) and variation1 not in (
-                user_active_room or []) and variation2 not in (client_active_room or []) and variation2 not in (
-                user_active_room or []):
+        # If the room id is not the same as the variation, then that means the user is trying to
+        # create a room with another user
+        elif (variation1 not in (client_active_room or []) and variation1 not in (
+                user_active_room or []) and variation2 not in (client_active_room or []) and
+              variation2 not in (
+                user_active_room or [])):
 
             # Add the room id to the active rooms table in the database
             database.add_active_room(client, room_id)
@@ -135,7 +140,8 @@ def handle_room_creation(data: dict) -> None:
 def handle_new_message(data: dict) -> None:
     """
     Handles a new message sent from one user to another within a room
-    :param data: The data passed from the front end, which contains the sender, receiver, and message
+    :param data: The data passed from the front end, which contains the sender, receiver,
+    and message
     :return: None
     """
     sender = data.get('sender')
@@ -278,14 +284,15 @@ def decrypt_messages(room_id: str) -> list:
         decrypted_sender = decrypt(message[1], key)
 
         # Split the decrypted parts into the data and hash
-        extracted_message, extracted_message_hash = decrypted_message[:-DIGEST_LENGTH], decrypted_message[
-                                                                                        -DIGEST_LENGTH:]
+        extracted_message, extracted_message_hash = (decrypted_message[:-DIGEST_LENGTH],
+                                                     decrypted_message[-DIGEST_LENGTH:])
 
         # Split the decrypted parts into the data and hash
-        extracted_sender, extracted_sender_hash = decrypted_sender[:-DIGEST_LENGTH], decrypted_sender[-DIGEST_LENGTH:]
+        extracted_sender, extracted_sender_hash = (decrypted_sender[:-DIGEST_LENGTH],
+                                                   decrypted_sender[-DIGEST_LENGTH:])
 
         # TODO Showcase the message integrity
-        # extracted_message = b'I tampered with the message'
+        #extracted_message = b'I tampered with the message'
 
         # Verify the message integrity
         message_has_integrity = verify_hash(extracted_message.decode(), extracted_message_hash)
@@ -294,7 +301,8 @@ def decrypt_messages(room_id: str) -> list:
         sender_has_integrity = verify_hash(extracted_sender.decode(), extracted_sender_hash)
 
         if not message_has_integrity or not sender_has_integrity:
-            decrypted_messages.append({'from_user_id': "Admin", 'message': "Message integrity compromised"})
+            decrypted_messages.append({'from_user_id': "Admin", 'message': "Message integrity "
+                                                                           "compromised"})
         else:
             decrypted_messages.append(
                 {'from_user_id': extracted_sender.decode(), 'message': extracted_message.decode()})
@@ -305,7 +313,8 @@ def decrypt_messages(room_id: str) -> list:
 # TODO User Authentication Routes
 def authenticate_user(password: str, user_id: str) -> bool:
     """
-    Authenticates the user by checking to see if the user exists in the database and if the password matches
+    Authenticates the user by checking to see if the user exists in the database and if the
+    password matches
     :param password : The password entered by the user
     :param user_id: The user id entered by the user
     :return: True if the user is authenticated, False otherwise
@@ -335,7 +344,8 @@ def meets_nist_requirements(password: str) -> bool:
     """
     Checks if the password meets either NIST requirements.
         1) Password must be at least 16 characters long
-        2) Password must contain at least 8 characters that include a number, uppercase letter, lowercase letter, and special character
+        2) Password must contain at least 8 characters that include a number, uppercase letter,
+        lowercase letter, and special character
 
         We are using the second requirement.
     :param password: The password to be checked
@@ -346,7 +356,8 @@ def meets_nist_requirements(password: str) -> bool:
     if len(password) < MIN_PASSWORD_LENGTH:
         return False
 
-    # Check if the password contains a number, uppercase letter, lowercase letter, and special character
+    # Check if the password contains a number, uppercase letter, lowercase letter, and special
+    # character
     has_number = False
     has_uppercase = False
     has_lowercase = False
@@ -398,7 +409,8 @@ def handle_login(data: dict) -> None:
 def handle_register(data: dict) -> None:
     """
     Handles a register request from the front end
-    :param data: The data passed from the front end, which contains the email, user id, and password
+    :param data: The data passed from the front end, which contains the email, user id,
+    and password
     :return: None
     """
     print(data)
@@ -417,7 +429,7 @@ def handle_register(data: dict) -> None:
     if database.email_exists(email):
         print("Email already registered")
         emit("register_response",
-             {'success': False, 'message': 'An account already exists for this email'})  # TODO Too much info?
+             {'success': False, 'message': 'An account already exists for this email'})
 
     # Check if the user id is already registered. If so, send the front end a failure message
     elif user_data:
@@ -428,7 +440,13 @@ def handle_register(data: dict) -> None:
         print("Username is banned")
         emit("register_response",
              {'success': False, 'message': 'Username is banned, please choose another'})
-
+    elif not meets_nist_requirements(password):
+        print("Password does not meet NIST requirements")
+        emit("register_response",
+             {'success': False, 'message': 'Password does not meet NIST requirements. Password '
+                                           'must be at least 8 characters long and contain '
+                                           'numbers, uppercase letters, lowercase letters, '
+                                           'and symbols'})
     else:
         # Create a new user and add them to the database
 
@@ -450,6 +468,10 @@ def handle_register(data: dict) -> None:
     # Get all the emails from the database
     emails = database.get_emails()
     print(emails)
+
+    # Get all passwords from the database for testing purposes
+    passwords = database.get_passwords()
+    print(passwords)
 
 
 if __name__ == '__main__':

@@ -111,7 +111,8 @@ def username_bloom_filter():
     :return: The bloom filter
     """
     # Create a bloom filter with the three hash functions and the size of the bits to be 100
-    # Function to find optimal size of bit array (m = -(n * lg(p)) / (lg(2)^2) where n is the number of items and p is the
+    # Function to find optimal size of bit array (m = -(n * ln(p)) / (ln(2)^2) where n is the
+    # number of items and p is the
     # probability of false positives)
     bloom_filter = BloomFilter(100, [hash1, hash2, hash3])
 
