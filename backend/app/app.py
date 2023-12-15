@@ -11,6 +11,7 @@ import sqlite3
 import stream_cipher
 import Crypto.Random
 import Crypto.Hash.SHA256
+import bloom_filter as bf
 
 # Initialize Flask
 app = Flask(__name__)
@@ -418,6 +419,9 @@ def handle_register(data: dict) -> None:
     user_id = data.get('userId')
     password = data.get('password')
 
+    # Get the bloom filter for usernames that are banned
+    bloom_filter = bf.username_bloom_filter()
+
     # Check if the email is already registered. If so, send the front end a failure message
     if email in emails:
         print("Email already registered")
@@ -429,6 +433,10 @@ def handle_register(data: dict) -> None:
         print("User already exists")
         emit("register_response",
              {'success': False, 'message': 'Username is already taken'})  # TODO Too much info?
+    elif bloom_filter.check(user_id):
+        print("Username is banned")
+        emit("register_response",
+             {'success': False, 'message': 'Username is banned, please choose another'})
     else:
         # Create a new user and add them to the database
 
