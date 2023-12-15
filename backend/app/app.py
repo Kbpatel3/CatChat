@@ -10,6 +10,7 @@ from config import SECRET_KEY
 import sqlite3
 import stream_cipher
 import Crypto.Random
+import Crypto.Hash.SHA256
 
 # Initialize Flask
 app = Flask(__name__)
@@ -35,6 +36,7 @@ rooms_and_keys = {}  # {room_id: key}
 
 # Constants
 SYM_KEY_LENGTH = 32
+DIGEST_LENGTH = 64
 
 
 # Create a database for the users, chats, emails seperated, passwords seperated,
@@ -214,8 +216,14 @@ def handle_new_message(data: dict) -> None:
             key = rooms_and_keys[room_id]
 
             # Encrypted message and sender and then append encrypted data to the list of messages
-            encrypted_message = encrypt(message, key)
-            encrypted_sender = encrypt(sender, key)
+            hashed_message = hash_message(message)
+            hashed_sender = hash_message(sender)
+
+            combined_message = combine_message_and_hash(message, hashed_message)
+            combined_sender = combine_message_and_hash(sender, hashed_sender)
+
+            encrypted_message = encrypt(combined_message, key)
+            encrypted_sender = encrypt(combined_sender, key)
 
             chats[room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
 
@@ -225,8 +233,14 @@ def handle_new_message(data: dict) -> None:
             key = rooms_and_keys[alternate_room_id]
 
             # Encrypted message and sender and then append to the list of messages
-            encrypted_message = encrypt(message, key)
-            encrypted_sender = encrypt(sender, key)
+            hashed_message = hash_message(message)
+            hashed_sender = hash_message(sender)
+
+            combined_message = combine_message_and_hash(message, hashed_message)
+            combined_sender = combine_message_and_hash(sender, hashed_sender)
+
+            encrypted_message = encrypt(combined_message, key)
+            encrypted_sender = encrypt(combined_sender, key)
 
             chats[alternate_room_id].append({'from_user_id': encrypted_sender, 'message': encrypted_message})
 
@@ -251,6 +265,37 @@ def decrypt(data: bytes, key: bytes) -> str:
     """
     cipher = stream_cipher.StreamCipher(key)
     return cipher.decrypt(data)
+
+
+def hash_message(data: str) -> str:
+    """
+    Hashes the data using SHA256
+    :param data: The data to be hashed
+    :return: The hashed data
+    """
+    hashed_data = Crypto.Hash.SHA256.new(data.encode()).hexdigest()
+    return hashed_data
+
+
+def combine_message_and_hash(data: str, hashed_data) -> str:
+    """
+    Hashes the data using SHA256
+    :param data: The data to be hashed
+    :param hashed_data: The hashed data
+    :return: The hashed data concatenated with the data
+    """
+    return data + hashed_data
+
+
+def verify_hash(data: str, extracted_hash: str) -> bool:
+    """
+    Verifies the hash of the data using SHA256
+    :param data: The data to be hashed
+    :param extracted_hash: The hash to be verified
+    :return: True if the hash is verified, False otherwise
+    """
+    hashed_data = hash_message(data)
+    return hashed_data == extracted_hash.decode()
 
 
 @socketio.on('getMessageHistory')
@@ -296,8 +341,26 @@ def decrypt_messages(room_id: str) -> list:
         decrypted_message = decrypt(message['message'], key)
         decrypted_sender = decrypt(message['from_user_id'], key)
 
-        decrypted_messages.append(
-            {'from_user_id': decrypted_sender.decode(), 'message': decrypted_message.decode()})
+        # Split the decrypted parts into the data and hash
+        extracted_message, extracted_message_hash = decrypted_message[:-DIGEST_LENGTH], decrypted_message[-DIGEST_LENGTH:]
+
+        # Split the decrypted parts into the data and hash
+        extracted_sender, extracted_sender_hash = decrypted_sender[:-DIGEST_LENGTH], decrypted_sender[-DIGEST_LENGTH:]
+
+        # TODO Showcase the message integrity
+        # extracted_message = b'I tampered with the message'
+
+        # Verify the message integrity
+        message_has_integrity = verify_hash(extracted_message.decode(), extracted_message_hash)
+
+        # Verify the sender integrity
+        sender_has_integrity = verify_hash(extracted_sender.decode(), extracted_sender_hash)
+
+        if not message_has_integrity or not sender_has_integrity:
+            decrypted_messages.append({'from_user_id': "Admin", 'message': "Message integrity compromised"})
+        else:
+            decrypted_messages.append(
+            {'from_user_id': extracted_sender.decode(), 'message': extracted_message.decode()})
 
     return decrypted_messages
 
@@ -372,6 +435,8 @@ def handle_register(data: dict) -> None:
         # Add the email to the list of emails
         emails.append(email)
         # Add the password for the user id to the list of passwords
+        # TODO Salt and hash the password before adding it to the list of passwords
+
         passwords[user_id] = password
         # Add the user to the database, user id holds the email and password
         users[user_id] = {'email': email, 'password': password}
