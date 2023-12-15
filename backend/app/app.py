@@ -12,6 +12,7 @@ import Crypto.Random
 import Crypto.Hash.SHA256
 import database
 import bloom_filter as bf
+import bcrypt
 
 # Initialize Flask
 app = Flask(__name__)
@@ -293,10 +294,21 @@ def authenticate_user(password: str, user_id: str) -> bool:
     # Get the user data from the database
     user_data = database.get_user(user_id)
 
-    # Check if the user exists in the database
-    if user_data and user_data[2] == password:
+    # Check if the user exists in the database and if the password matches
+    if user_data and bcrypt.checkpw(password.encode(), user_data[2]):
         return True
     return False
+
+
+def hash_password(password: str) -> bytes:
+    # Generate a random salt
+    salt = bcrypt.gensalt()
+
+    # Hash the password with the salt
+    hashed_password = bcrypt.hashpw(password.encode(), salt)
+
+    # Return the hashed password
+    return hashed_password
 
 
 def meets_nist_requirements(password: str) -> bool:
@@ -411,11 +423,14 @@ def handle_register(data: dict) -> None:
         # Add the password for the user id to the list of passwords
         # TODO Salt and hash the password before adding it to the list of passwords
 
+        # Salt and hash the password
+        hashed_password = hash_password(password)
+
         # Add the password to the database
-        database.add_password(user_id, password)
+        database.add_password(user_id, hashed_password)
 
         # Add the user to the database with the email and password
-        database.add_user(user_id, email, password)
+        database.add_user(user_id, email, hashed_password)
 
         # Send the front end a success message
         emit("register_response", {'success': True, 'message': 'Account created successfully'})
