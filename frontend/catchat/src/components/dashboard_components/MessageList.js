@@ -124,8 +124,12 @@ function MessageList({ sender }) {
           {messages.map((message, index) => (
             <li key={index} className="my-2">
               <div className={` ${message.from_user_id === sender ? 'text-right' : 'text-left'}`}>
-                <div>From: {message.from_user_id}</div>
-                <div>{message.message}</div>
+                <div className={"font-semibold text-gray-600"}>
+                    From: {message.from_user_id}
+                </div>
+                <div className={"mt-1 p-2 bg-blue-100 rounded-md shadow"}>
+                    {message.message}
+                </div>
               </div>
             </li>
           ))}
