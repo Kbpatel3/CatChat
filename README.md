@@ -30,15 +30,53 @@ for a more feature rich database to be implemented in the future.
 * to the VCS tab and selecting "Get from Version Control" and pasting the https link into the URL field.
 
 ## Execution
-* create two terminals, one for the frontend and one for the backend.
-* in the backend terminal, navigate to the backend folder and then the app folder using `cd <directory_name>`.
+* Create two terminals, one for the frontend and one for the backend.
+* In the backend terminal, navigate to the backend folder and then the app folder using `cd 
+  <directory to CatChat>/backend/`.
+* Type the following into the backend terminal: `python -m venv venv` to create a virtual environment for the backend.
+* If on windows, type the following into the backend terminal: `venv\Scripts\activate` to activate the virtual environment.
+* If on linux or mac, type the following into the backend terminal: `source venv/bin/activate` to activate the virtual environment.
+* Type the following into the backend terminal: `pip install -r requirements.txt` to install all dependencies for the backend.
+* In the backend terminal, navigate to the app folder using `cd app`.
 * If on windows, type the following into the backend terminal: `python app.py` to start the backend server.
 * If on linux or mac, type the following into the backend terminal: `python3 app.py` to start the backend server.
-* in the frontend terminal, navigate to the frontend folder and then the app folder using `cd <directory_name>`.
+* in the frontend terminal, navigate to the frontend folder and then the app folder using `cd 
+  <directory to CatChat>/frontend/catchat/`.
+* Type the following into the frontend terminal: `npm install` to install all dependencies for the frontend.
 * Type the following into the frontend terminal: `npm start` to start the frontend server.
 * The application should now be running on `localhost:5000`.
 * A new tab will open up in your default browser for the landing page of the application.
 * To stop the application, press `ctrl + c` in both terminals.
+
+## Current Features
+* User Authentication
+* User Registration
+* User Login
+* Password Salting and Hashing
+* Password Verification
+* Private Messaging (1 to 1)
+* Secure Messaging (Symmetric Encryption) (1 to 1)
+* Bloom Filter for Username Checking
+* Bloom filter for Password Checking
+* NIST 800-64 Password Guidelines (At least 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 
+  special character)
+* Chat History
+* Database Storage (SQLite)
+
+## Future Features
+* Multiple Room Chat (1 to many)
+* User Profile
+* User Profile Picture
+* User Status Features
+* Access Control
+* Account deletion
+* Administrator features (ban, kick, etc.)
+* Bloom Filter for Banned Users (IP Address)
+
+## Known Issues
+* When clicking on a chat room, the chat history does not load until a message is sent and the 
+  chat card is clicked again.
+* SocketIO sometimes loses connection and does not reconnect.
 
 ## Authors 
 * [Kaushal Patel](https://github.com/Kbpatel3)
