@@ -120,7 +120,7 @@ def handle_room_creation(data: dict) -> None:
         elif (variation1 not in (client_active_room or []) and variation1 not in (
                 user_active_room or []) and variation2 not in (client_active_room or []) and
               variation2 not in (
-                user_active_room or [])):
+                      user_active_room or [])):
 
             # Add the room id to the active rooms table in the database
             database.add_active_room(client, room_id)
@@ -292,7 +292,7 @@ def decrypt_messages(room_id: str) -> list:
                                                    decrypted_sender[-DIGEST_LENGTH:])
 
         # TODO Showcase the message integrity
-        #extracted_message = b'I tampered with the message'
+        # extracted_message = b'I tampered with the message'
 
         # Verify the message integrity
         message_has_integrity = verify_hash(extracted_message.decode(), extracted_message_hash)
@@ -362,6 +362,7 @@ def meets_nist_requirements(password: str) -> bool:
     has_uppercase = False
     has_lowercase = False
     has_special_character = False
+    not_banned = False
 
     # Loop through each character in the password
     for character in password:
@@ -378,8 +379,13 @@ def meets_nist_requirements(password: str) -> bool:
         else:
             has_special_character = True
 
+    # Check the bloom filter for banned passwords
+    password_bloom_filter = bf.common_password_bloom_filter()
+    if not password_bloom_filter.check(password):
+        not_banned = True
+
     # Check if the password meets the NIST requirements
-    if has_number and has_uppercase and has_lowercase and has_special_character:
+    if has_number and has_uppercase and has_lowercase and has_special_character and not_banned:
         return True
     return False
 
@@ -423,7 +429,7 @@ def handle_register(data: dict) -> None:
     user_data = database.get_user(user_id)
 
     # Get the bloom filter for usernames that are banned
-    bloom_filter = bf.username_bloom_filter()
+    username_bloom_filter = bf.username_bloom_filter()
 
     # Check if the email is already registered. If so, send the front end a failure message
     if database.email_exists(email):
@@ -436,7 +442,7 @@ def handle_register(data: dict) -> None:
         print("User already exists")
         emit("register_response",
              {'success': False, 'message': 'Username is already taken'})  # TODO Too much info?
-    elif bloom_filter.check(user_id):
+    elif username_bloom_filter.check(user_id):
         print("Username is banned")
         emit("register_response",
              {'success': False, 'message': 'Username is banned, please choose another'})
@@ -446,7 +452,8 @@ def handle_register(data: dict) -> None:
              {'success': False, 'message': 'Password does not meet NIST requirements. Password '
                                            'must be at least 8 characters long and contain '
                                            'numbers, uppercase letters, lowercase letters, '
-                                           'and symbols'})
+                                           'and symbols. The password also cannot be a common '
+                                           'password. Please try again.'})
     else:
         # Create a new user and add them to the database
 

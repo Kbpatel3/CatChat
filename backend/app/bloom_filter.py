@@ -46,7 +46,8 @@ class BloomFilter:
         :param item: The item to be checked
         :return: True if the item is in the set, False otherwise
         """
-        return all(self.bit_array[hash_func(item) % self.size] == ONE for hash_func in self.hash_funcs)
+        return all(
+            self.bit_array[hash_func(item) % self.size] == ONE for hash_func in self.hash_funcs)
 
 
 # Three hash functions to use for the bloom filter
@@ -122,4 +123,24 @@ def username_bloom_filter():
             bloom_filter.add(line.strip())
 
     # Return the bloom filter with the blacklisted usernames
+    return bloom_filter
+
+
+def common_password_bloom_filter():
+    """
+    This function creates a bloom filter for the common passwords that are blacklisted.
+    :return: The bloom filter
+    """
+    # Create a bloom filter with the three hash functions and the size of the bits to be 100
+    # Function to find optimal size of bit array (m = -(n * ln(p)) / (ln(2)^2) where n is the
+    # number of items and p is the
+    # probability of false positives)
+    bloom_filter = BloomFilter(1000, [hash1, hash2, hash3])
+
+    # Add blacklisted passwords
+    with open("commonPasswords.txt") as f:
+        for line in f:
+            bloom_filter.add(line.strip())
+
+    # Return the bloom filter with the blacklisted passwords
     return bloom_filter
